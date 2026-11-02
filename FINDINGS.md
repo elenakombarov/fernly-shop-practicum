@@ -1,17 +1,15 @@
 # Findings
 
-Nothing is a finding yet. The shop was mapped, not tested, and a suspicion is not a finding until a test proves it.
+A suspicion is not a finding until a test proves it. Confirmed findings are listed first, in severity order: money and privacy, then broken flows, then everything else.
 
-When a test does prove one, add an entry in this shape and keep the list in severity order: money and privacy, then broken flows, then everything else.
+### The + button stays enabled when the quantity equals the stock left
 
-### One-line title (what is wrong)
-
-- **Where:** the page, component, or endpoint
-- **Category:** Components, Pages, Business rules in the API, The contract, Caching, Authorization, or Accessibility
-- **Impact:** what this does to a customer, in one sentence
-- **Evidence:** the test that fails, or the exact steps and requests
-- **Contradicts:** the line in `docs/PRODUCT.md` or the API contract
-- **Suggested fix:** optional, one line
+- **Where:** `QuantityStepper` (`web/src/components/QuantityStepper.tsx`), on the plant page and in the cart
+- **Category:** Components
+- **Impact:** A customer can raise the quantity above the number of plants left in stock.
+- **Evidence:** `web/cypress/component/QuantityStepper.cy.tsx`, test "disables + at the stock limit", fails. It mounts the stepper at `value={3}` and `max={3}` and expects Increase quantity to be disabled. The failure screenshot shows − 3 + with + still enabled, and the command log asserts that button should be disabled.
+- **Contradicts:** `docs/PRODUCT.md` line 34 (at the stock limit, the + button is disabled)
+- **Suggested fix:** Disable increase when `value >= max`, not only when `value > max`.
 
 ## Suspicions — not yet tested
 
@@ -19,7 +17,6 @@ Each line looked different from `docs/PRODUCT.md` while reading the code or walk
 
 - Prices are shown without two decimals: the browse grid showed `$22`, `$27.5`, and `$49`, and size deltas showed `+$6` and `+$4`. `formatPrice` prefixes `$` to the number after rounding to cents, so `22` is shown as `$22` and `27.5` as `$27.5`. May contradict `docs/PRODUCT.md` line 31 (two decimals everywhere: `$12.50`, never `$12.5`).
 - Care level 3 is labeled "Moderate care". `GET /api/plants` says Fiddle Leaf Fig is care level 3, and its badge showed three dots and the words "Moderate care". `CareLevelBadge` picks `LABELS[Math.min(level, 2) - 1]`, which is "Moderate" for level 3. May contradict line 32 (1 Easy, 2 Moderate, 3 Expert).
-- The + button stays enabled when the quantity equals stock. `QuantityStepper` disables it only when `value > max`, so the stock-limit value can still be increased. May contradict line 34 (at the stock limit, the + button is disabled, and a line can never go above the stock left).
 - Following "Likes the same light" from Fiddle Leaf Fig to Rubber Plant left the address at `/plants/pl-rubber` while the heading still read "Fiddle Leaf Fig". `usePlant` caches every plant under the query key `['plant']`, with no plant id. May contradict line 35 (the plant page always shows the plant in the address bar, including after that link).
 - A catalog load failure uses the empty-filter copy. `BrowsePage` renders "No plants match your filters" for both `plants.isError` and an empty item list, and that branch has no Try again. May contradict line 27 (if the catalog can't be loaded, the page says so and offers Try again, and never pretends there are no plants). This branch was not triggered in the browser.
 - The plant photo has no alternative text (`<img>` with `src` and `className` only) and was missing from the accessibility tree on the plant page. May contradict line 62 (every meaningful image has alternative text).
