@@ -29,11 +29,33 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 27 (if the catalog can't be loaded, the page says so and offers Try again, and never pretends there are no plants)
 - **Suggested fix:** When the plants request fails, show an alert and a Try again button, and do not use the empty-filter copy.
 
+## Suspicions
+
+A failing test is evidence. These are not confirmed findings.
+
+### PriceTag omits trailing zeros unless the amount already has two decimals
+
+- **Where:** `PriceTag` (`web/src/components/PriceTag.tsx`) through `formatPrice` in `web/src/money.ts`
+- **Category:** Money
+- **Impact:** A price such as twelve dollars and fifty cents is shown as `$12.5`, and a whole-dollar price is shown as `$22` or `$1`. The amounts are harder to compare, and they do not match the shop's dollar format.
+- **Evidence:** **Executed:** `web/cypress/component/PriceTag.cy.tsx`. PT-01 mounts `amount={12.5}` and the price text is `$12.5`, not `$12.50`. PT-02 mounts `amount={22}` and the text is `$22`, not `$22.00`. PT-05 mounts `amount={1}` and the text is `$1`, not `$1.00`. PT-04 mounts `amount={0}` and the text is `$0`, not `$0.00`; that zero case is already the confirmed finding above, from the browse card. Screenshots: `web/cypress/screenshots/PriceTag.cy.tsx/PriceTag -- PT-01 shows $12.50 for an amount with one decimal place (failed).png`, `web/cypress/screenshots/PriceTag.cy.tsx/PriceTag -- PT-02 shows $22.00 for whole dollars (failed).png`, `web/cypress/screenshots/PriceTag.cy.tsx/PriceTag -- PT-05 shows $1.00 for one dollar (failed).png`, `web/cypress/screenshots/PriceTag.cy.tsx/PriceTag -- PT-04 shows $0.00 for a zero amount (failed).png`. **Inspected only:** `formatPrice` returns `` `$${Math.round(amount * 100) / 100}` ``, which drops trailing zeros. PT-03 (`$9.99`), PT-06 (`$0.01`), and PT-16 (`$0.99`) passed in the same run.
+- **Contradicts:** `docs/PRODUCT.md` line 31 (every price is dollars with two decimals: `$12.50`, never `$12.5`)
+- **Suggested fix:** Format every amount with two decimal places.
+
+### The price color is below 4.5:1 on the shop background
+
+- **Where:** `PriceTag` color `#8dbb8a` (`web/src/components/PriceTag.module.css`) on the shop background `#f6faf3` (`--paper` in `web/src/styles/global.css`)
+- **Category:** Accessibility
+- **Impact:** The price is pale green on the pale shop background, so it is harder to read than the shop's contrast rule allows.
+- **Evidence:** **Executed:** `web/cypress/component/PriceTag.cy.tsx`, test "PT-14 keeps the price at a 4.5:1 contrast on the shop background", fails. The computed color is `rgb(141, 187, 138)` (`#8dbb8a`). Against `#f6faf3` the contrast is about 2.07:1, and the test requires at least 4.5:1. Screenshot: `web/cypress/screenshots/PriceTag.cy.tsx/PriceTag -- PT-14 keeps the price at a 4.51 contrast on the shop background (failed).png`.
+- **Contradicts:** `docs/PRODUCT.md` line 63 (text has enough contrast against its background, 4.5:1 for normal text). The row also cites the component's purpose: default size, shop background `#f6faf3`, price color `#8dbb8a`.
+- **Suggested fix:** Darken the price color until it reaches 4.5:1 on `#f6faf3`.
+
 ## Suspicions — not yet tested
 
 Each line looked different from `docs/PRODUCT.md` while reading the code or walking the shop. None of these has a failing test yet.
 
-- Other prices are still shown without two decimals. The browse grid showed `$22`, `$27.5`, and `$49`, and size deltas showed `+$6` and `+$4`. Price 0 on a browse card is a confirmed finding above. These other amounts were seen on screen and do not have their own test yet. May contradict `docs/PRODUCT.md` line 31.
+- Browse cards and size deltas showed `$27.5`, `$49`, `+$6`, and `+$4` on screen. Whole-dollar and one-decimal prices now have a failing `PriceTag` component test, recorded under Suspicions above. These browse amounts and size deltas do not have their own page test yet. May contradict `docs/PRODUCT.md` line 31.
 - Care level 3 is labeled "Moderate care". `GET /api/plants` says Fiddle Leaf Fig is care level 3, and its badge showed three dots and the words "Moderate care". `CareLevelBadge` picks `LABELS[Math.min(level, 2) - 1]`, which is "Moderate" for level 3. May contradict line 32 (1 Easy, 2 Moderate, 3 Expert).
 - Following "Likes the same light" from Fiddle Leaf Fig to Rubber Plant left the address at `/plants/pl-rubber` while the heading still read "Fiddle Leaf Fig". `usePlant` caches every plant under the query key `['plant']`, with no plant id. May contradict line 35 (the plant page always shows the plant in the address bar, including after that link).
 - The plant photo has no alternative text (`<img>` with `src` and `className` only) and was missing from the accessibility tree on the plant page. May contradict line 62 (every meaningful image has alternative text).
