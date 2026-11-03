@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { computeAccessibleName, isInaccessible } from 'dom-accessibility-api';
 import { PlantCard } from '../../src/components/PlantCard';
+import { pressEnter } from '../support/press-enter';
 import type { PlantSummary } from '../../src/types';
 
 const snake: PlantSummary = {
@@ -370,9 +371,7 @@ describe('PlantCard', () => {
           $button[0],
         );
       });
-      // cy.press(Enter) omits Enter's key code, so Chromium does not activate the button.
-      // Typing Enter is the press this runner turns into that click.
-      cy.focused().type('{enter}');
+      pressEnter();
       cy.get('@onToggleSave').should('have.been.calledOnceWith', 'pl-snake');
     },
   );

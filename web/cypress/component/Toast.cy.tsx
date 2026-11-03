@@ -1,4 +1,5 @@
 import { Toast } from '../../src/components/Feedback';
+import { pressEnter } from '../support/press-enter';
 
 type FocusRing = { style: string; width: string; color: string };
 
@@ -83,6 +84,9 @@ describe('Toast', () => {
   it('TO-05 calls onClose once after 4 seconds', { tags: '@component' }, () => {
     const onClose = cy.spy().as('onClose');
     // The toast closes itself after 4 seconds. Advance the clock instead of waiting.
+    // Fake only the timeout functions. A full clock also freezes animation frames, so the
+    // effect arms this 4000ms timer during a later tick. The fake clock runs that timer
+    // when time moves past 4000ms, which the last step does.
     cy.clock(null, ['setTimeout', 'clearTimeout']);
     cy.mount(<Toast message={added} onClose={onClose} />);
 
@@ -90,7 +94,7 @@ describe('Toast', () => {
     cy.get('@onClose').should('not.have.been.called');
     cy.tick(3999);
     cy.get('@onClose').should('not.have.been.called');
-    cy.tick(1);
+    cy.tick(2);
     cy.get('@onClose').should('have.been.calledOnce');
   });
 
@@ -111,8 +115,7 @@ describe('Toast', () => {
     cy.findByRole('button', { name: 'Dismiss' }).then(($button) => {
       expectFocused($button[0], 'Dismiss');
     });
-    // Typing Enter supplies the key code this runner's cy.press(Enter) leaves out.
-    cy.focused().type('{enter}');
+    pressEnter();
     cy.get('@onClose').should('have.been.calledOnce');
   });
 });

@@ -1,4 +1,5 @@
 import { CartLine } from '../../src/components/CartLine';
+import { pressEnter } from '../support/press-enter';
 import type { CartLine as CartLineData } from '../../src/types';
 
 const aloe: CartLineData = {
@@ -111,8 +112,7 @@ describe('CartLine', () => {
         $button[0],
       );
     });
-    // Typing Enter supplies the key code this runner's cy.press(Enter) leaves out.
-    cy.focused().type('{enter}');
+    pressEnter();
     cy.get('@onRemove').should('have.been.calledOnceWith', 'ln-aloe');
   });
 });

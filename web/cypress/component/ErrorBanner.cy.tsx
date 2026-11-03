@@ -1,4 +1,5 @@
 import { ErrorBanner } from '../../src/components/Feedback';
+import { pressEnter } from '../support/press-enter';
 
 type FocusRing = { style: string; width: string; color: string };
 
@@ -68,8 +69,7 @@ describe('ErrorBanner', () => {
     cy.findByRole('button', { name: 'Try again' }).then(($button) => {
       expectFocused($button[0], 'Try again');
     });
-    // Typing Enter supplies the key code this runner's cy.press(Enter) leaves out.
-    cy.focused().type('{enter}');
+    pressEnter();
     cy.get('@onRetry').should('have.been.calledOnce');
   });
 });

@@ -54,7 +54,7 @@ describe('Cart page', () => {
   it('CA-04 sends a signed-out visit to /login?next=/cart', { tags: '@ui' }, () => {
     cy.visit('/cart');
 
-    cy.location().then((location) => {
+    cy.location().should((location) => {
       expect(location.pathname + location.search, 'signed-out cart address').to.equal('/login?next=/cart');
     });
   });
