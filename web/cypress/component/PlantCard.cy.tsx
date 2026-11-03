@@ -205,7 +205,7 @@ describe('PlantCard', () => {
     });
   });
 
-  it('PC-04 shows $22.00', { tags: '@component' }, () => {
+  it('PC-04 shows $22.00', { tags: ['@component', '@known-bug'] }, () => {
     cy.mount(<PlantCard plant={snake} onToggleSave={cy.spy()} />);
 
     cy.findByText(hasOwnPriceText).then(($el) => {
@@ -313,7 +313,7 @@ describe('PlantCard', () => {
 
   it(
     'PC-15 gives the save button a name and does not announce the heart',
-    { tags: '@component' },
+    { tags: ['@component', '@known-bug'] },
     () => {
       cy.mount(<PlantCard plant={snake} onToggleSave={cy.spy()} />);
 

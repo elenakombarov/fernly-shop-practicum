@@ -59,7 +59,7 @@ describe('Cart page', () => {
     });
   });
 
-  it('CA-05 shows Air Plant and the price $0.00', { tags: '@ui' }, () => {
+  it('CA-05 shows Air Plant and the price $0.00', { tags: ['@ui', '@known-bug'] }, () => {
     cy.intercept('GET', '/api/auth/me', { fixture: 'auth-me.json' }).as('me');
     cy.intercept('GET', '/api/cart', { fixture: 'cart-edge.json' }).as('cart');
     cy.visit('/cart', {

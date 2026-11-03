@@ -68,7 +68,7 @@ describe('Orders page', () => {
     });
   });
 
-  it('OR-05 shows the link Order ord-zero and the total $0.00', { tags: '@ui' }, () => {
+  it('OR-05 shows the link Order ord-zero and the total $0.00', { tags: ['@ui', '@known-bug'] }, () => {
     cy.intercept('GET', '/api/auth/me', { fixture: 'auth-me.json' }).as('me');
     cy.intercept('GET', '/api/cart', { fixture: 'cart-empty.json' }).as('cart');
     cy.intercept('GET', /\/api\/orders$/, { fixture: 'orders-edge.json' }).as('orders');

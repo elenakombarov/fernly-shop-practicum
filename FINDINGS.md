@@ -12,6 +12,9 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
   - `web/cypress/component/PriceTag.cy.tsx`: PT-01 `amount={12.5}` is `$12.5`; PT-02 `amount={22}` is `$22`; PT-04 `amount={0}` is `$0`; PT-05 `amount={1}` is `$1`.
   - `web/cypress/component/PlantCard.cy.tsx`, PC-04: Snake Plant at price 22 renders `$22`.
   - `web/cypress/component/SizePicker.cy.tsx`, SZ-03: Medium at a delta of 6 renders `+$6`.
+  - `web/cypress/ui/plant.cy.ts`, PL-05: Air Plant at price 0 renders `$0`.
+  - `web/cypress/ui/cart.cy.ts`, CA-05: the Air Plant unit price, line total, and subtotal render `$0`.
+  - `web/cypress/ui/orders.cy.ts`, OR-05: order `ord-zero` has total 0 and renders `$0`.
   PT-03 (`$9.99`), PT-06 (`$0.01`), and PT-16 (`$0.99`) passed. SZ-02 (Small, "Base price") passed.
 - **Contradicts:** `docs/PRODUCT.md` line 31 (every price is dollars with two decimals: `$12.50`, never `$12.5`). SZ-03 also cites line 33 (Medium adds the amount shown).
 - **Suggested fix:** Format every amount with two decimal places.
@@ -128,18 +131,6 @@ These tests failed, and the recorded evidence does not confirm that the product 
 - **Contradicts:** the component's purpose (`duration` defaults to 4000, and `onClose` runs when the toast closes itself)
 - **Suggested fix:** Confirm the toast calls `onClose` once after 4 real seconds. If it does, the gap is the test clock, not the toast.
 
-### A zero price is shown as $0 on the plant, the cart, and the orders list
-
-- **Where:** Plant page price, cart line and order summary, orders list total
-- **Category:** Money
-- **Impact:** A price of zero is shown as `$0`, so it does not match the shop's dollar format.
-- **Evidence:** **Executed:** these tests fail on the price text. Each mocked amount is 0.
-  - `web/cypress/ui/plant.cy.ts`, PL-05 "shows heading Air Plant and the price $0.00": the heading "Air Plant" is on the page. The price text is `$0`. Screenshot: `web/cypress/screenshots/plant.cy.ts/Plant page -- PL-05 shows heading Air Plant and the price $0.00 (failed).png`.
-  - `web/cypress/ui/cart.cy.ts`, CA-05 "shows Air Plant and the price $0.00": the name "Air Plant" is on the page. The unit price, the line total, and the subtotal are `$0`. Screenshot: `web/cypress/screenshots/cart.cy.ts/Cart page -- CA-05 shows Air Plant and the price $0.00 (failed).png`.
-  - `web/cypress/ui/orders.cy.ts`, OR-05 "shows the link Order ord-zero and the total $0.00": the link "Order ord-zero" is on the page. The total is `$0`. Screenshot: `web/cypress/screenshots/orders.cy.ts/Orders page -- OR-05 shows the link Order ord-zero and the total $0.00 (failed).png`.
-- **Contradicts:** `docs/PRODUCT.md` line 31 (every price is dollars with two decimals).
-- **Suggested fix:** Show `$0.00` for a zero amount. The same dollar format is already a confirmed finding from other tests. These page runs stay under Suspicions.
-
 ### The signed-out cart address was still /cart when it was checked
 
 - **Where:** Cart page (`/cart`)
@@ -153,7 +144,6 @@ These tests failed, and the recorded evidence does not confirm that the product 
 
 Each line looked different from `docs/PRODUCT.md` while reading the code or walking the shop. None of these has a failing test yet.
 
-- Browse cards showed `$27.5` and `$49` on screen. Whole-dollar and one-decimal prices, and Medium's `+$6`, are now findings (PT-01, PT-02, PT-04, PT-05, PC-04, SZ-03, and the browse zero-price test). These browse amounts do not have their own page test yet. May contradict `docs/PRODUCT.md` line 31.
 - Following "Likes the same light" from Fiddle Leaf Fig to Rubber Plant left the address at `/plants/pl-rubber` while the heading still read "Fiddle Leaf Fig". `usePlant` caches every plant under the query key `['plant']`, with no plant id. May contradict line 35 (the plant page always shows the plant in the address bar, including after that link).
 - The plant photo has no alternative text (`<img>` with `src` and `className` only) and was missing from the accessibility tree on the plant page. May contradict line 62 (every meaningful image has alternative text). The card photo is a different image: PC-14 passed, and its alternative text is "Snake Plant".
 

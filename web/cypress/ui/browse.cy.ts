@@ -42,7 +42,7 @@ describe('Browse page', () => {
     });
   });
 
-  it('shows $0.00 for a plant priced at zero', { tags: '@ui' }, () => {
+  it('shows $0.00 for a plant priced at zero', { tags: ['@ui', '@known-bug'] }, () => {
     cy.intercept('GET', '/api/plants?*', { fixture: 'plants-zero-price.json' }).as('plants');
     cy.visit('/');
     cy.wait('@plants');
@@ -52,7 +52,7 @@ describe('Browse page', () => {
     });
   });
 
-  it('offers Try again when the catalog cannot be loaded', { tags: '@ui' }, () => {
+  it('offers Try again when the catalog cannot be loaded', { tags: ['@ui', '@known-bug'] }, () => {
     cy.intercept('GET', '/api/plants?*', {
       statusCode: 500,
       fixture: 'plants-negative.json',

@@ -45,7 +45,7 @@ describe('SizePicker', () => {
     });
   });
 
-  it('SZ-03 shows +$6.00 for Medium', { tags: '@component' }, () => {
+  it('SZ-03 shows +$6.00 for Medium', { tags: ['@component', '@known-bug'] }, () => {
     cy.mount(<SizePicker sizes={sizes} value="S" onChange={cy.spy()} />);
 
     cy.findByRole('radio', { name: /^Medium/ }).then(($radio) => {

@@ -54,7 +54,7 @@ describe('Plant page', () => {
     });
   });
 
-  it('PL-05 shows heading Air Plant and the price $0.00', { tags: '@ui' }, () => {
+  it('PL-05 shows heading Air Plant and the price $0.00', { tags: ['@ui', '@known-bug'] }, () => {
     cy.intercept('GET', '/api/plants?*', { fixture: 'plants-empty.json' }).as('catalog');
     cy.intercept('GET', '/api/plants/pl-free', { fixture: 'plant-edge.json' }).as('plant');
     cy.visit('/plants/pl-free');

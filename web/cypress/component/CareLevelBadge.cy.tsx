@@ -58,7 +58,7 @@ describe('CareLevelBadge', () => {
     });
   });
 
-  it('CB-03 shows Expert care with three filled dots', { tags: '@component' }, () => {
+  it('CB-03 shows Expert care with three filled dots', { tags: ['@component', '@known-bug'] }, () => {
     cy.mount(<CareLevelBadge level={3} />);
 
     badge().then(($el) => {

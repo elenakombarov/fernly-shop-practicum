@@ -225,7 +225,7 @@ describe('SearchBox', () => {
     });
   });
 
-  it('SB-16 gives the search field a name', { tags: '@component' }, () => {
+  it('SB-16 gives the search field a name', { tags: ['@component', '@known-bug'] }, () => {
     cy.mount(<SearchBox value="" onSearch={cy.spy()} />);
 
     cy.findByRole('searchbox').then(($el) => {
@@ -233,7 +233,7 @@ describe('SearchBox', () => {
     });
   });
 
-  it('SB-18 submits with Enter and keeps focus visible', { tags: '@component' }, () => {
+  it('SB-18 submits with Enter and keeps focus visible', { tags: ['@component', '@known-bug'] }, () => {
     const onSearch = cy.spy().as('onSearch');
     const rings: { field?: FocusRing; search?: FocusRing } = {};
     cy.mount(<SearchBox value="" onSearch={onSearch} />);
