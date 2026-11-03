@@ -1,0 +1,19 @@
+{
+  "lines": [
+    {
+      "id": "ln-aloe",
+      "plantId": "pl-aloe",
+      "name": "Aloe Vera",
+      "size": "S",
+      "unitPrice": 9.99,
+      "quantity": 1,
+      "lineTotal": 9.99,
+      "stock": 18,
+      "imageUrl": "/plants/succulent.svg"
+    }
+  ],
+  "itemCount": 1,
+  "subtotal": 9.99,
+  "shipping": 6.95,
+  "total": 16.94
+}

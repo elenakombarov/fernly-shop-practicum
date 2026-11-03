@@ -1,0 +1,28 @@
+[
+  {
+    "id": "ord-1001",
+    "status": "placed",
+    "createdAt": "2026-11-01T15:00:00.000Z",
+    "lines": [
+      {
+        "id": "ln-aloe",
+        "plantId": "pl-aloe",
+        "name": "Aloe Vera",
+        "size": "S",
+        "unitPrice": 9.99,
+        "quantity": 1,
+        "lineTotal": 9.99,
+        "imageUrl": "/plants/succulent.svg"
+      }
+    ],
+    "subtotal": 9.99,
+    "shipping": 6.95,
+    "total": 16.94,
+    "shippingAddress": {
+      "fullName": "Ava Green",
+      "address": "1 Fern Street",
+      "city": "Portland",
+      "postalCode": "97201"
+    }
+  }
+]
