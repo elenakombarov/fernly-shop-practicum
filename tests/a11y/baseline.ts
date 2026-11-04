@@ -54,16 +54,17 @@ function isBaselineEntry(value: unknown): value is BaselineEntry {
   );
 }
 
-export function loadBaseline(): BaselineEntry[] {
-  const parsed: unknown = JSON.parse(readFileSync(baselinePath, 'utf8'));
+export function loadBaseline(file = baselinePath): BaselineEntry[] {
+  const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
+  const label = path.basename(file);
   if (!Array.isArray(parsed)) {
-    throw new Error('a11y-baseline.json must be a list of known violations');
+    throw new Error(`${label} must be a list of known violations`);
   }
 
   return parsed.map((entry, index) => {
     if (!isBaselineEntry(entry)) {
       throw new Error(
-        `a11y-baseline.json entry ${index} must have rule, page, target, owner, expires (YYYY-MM-DD), and reason`,
+        `${label} entry ${index} must have rule, page, target, owner, expires (YYYY-MM-DD), and reason`,
       );
     }
     return entry;
@@ -77,7 +78,7 @@ export function todayStamp(now = new Date()): string {
   return `${year}-${month}-${day}`;
 }
 
-function matchingEntry(
+export function matchingEntry(
   element: ViolationElement,
   baseline: readonly BaselineEntry[],
 ): BaselineEntry | undefined {

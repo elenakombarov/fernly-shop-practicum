@@ -75,20 +75,20 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 
 ### The price color is below 4.5:1 on the shop background
 
-- **Where:** `PriceTag` color `#8dbb8a` (`web/src/components/PriceTag.module.css`) on the shop background `#f6faf3` (`--paper` in `web/src/styles/global.css`)
+- **Where:** axe rule `color-contrast` on `PriceTag` (`#8dbb8a`). Pages: Browse (12 prices), Plant (1 price), Cart (5 prices), Checkout (3 prices). Sign in has none.
 - **Category:** Accessibility
-- **Impact:** The price is pale green on the pale shop background, so it is harder to read than the shop's contrast rule allows.
-- **Evidence:** **Executed:** `web/cypress/component/PriceTag.cy.tsx`, PT-14 "keeps the price at a 4.5:1 contrast on the shop background", fails. The computed color is `rgb(141, 187, 138)` (`#8dbb8a`). Against `#f6faf3` the contrast is about 2.07:1.
-- **Contradicts:** `docs/PRODUCT.md` line 63 (text has enough contrast against its background, 4.5:1 for normal text)
-- **Suggested fix:** Darken the price color until it reaches 4.5:1 on `#f6faf3`.
+- **Impact:** Serious. The price is pale green, so a customer can misread what a plant, a line, the shipping, or the total costs. Browse, Plant, and Checkout fail the accessibility scan on this rule. Cart has the same failure and is not blocking only because `a11y-baseline.json` accepts `color-contrast` on Cart until 2026-12-31 (owner "design team", reason "new brand colors").
+- **Evidence:** **Executed:** `web/cypress/component/PriceTag.cy.tsx`, PT-14 "keeps the price at a 4.5:1 contrast on the shop background", fails. The computed color is `rgb(141, 187, 138)` (`#8dbb8a`). Against `#f6faf3` the contrast is about 2.07:1. **Executed:** `tests/a11y/pages.spec.ts` on 4 Nov 2026. "Browse has no blocking accessibility violations" fails with 12 new serious `color-contrast` nodes. Example: `li:nth-child(1) > article > .PlantCard-module__body > .PlantCard-module__footer > .PriceTag-module__price.PriceTag-module__md`, `$34.99`, contrast 2.18 (`#8dbb8a` on `#ffffff`, 12.6pt bold; expected 4.5:1). "Plant has no blocking accessibility violations" fails on `.PriceTag-module__price`, contrast 2.06 (`#8dbb8a` on `#f6faf3`, 19.2pt bold; expected 3:1 for that large text). "Checkout has no blocking accessibility violations" fails on 3 nodes, including the `$34.99` subtotal at 2.18 (`#8dbb8a` on `#ffffff`, 12.6pt bold; expected 4.5:1) and the `$41.94` total at 2.18 (19.2pt bold; expected 3:1). The Cart scan recorded the same rule on 5 nodes (unit price, line total, subtotal, shipping `$6.95`, and the `$41.94` total), all serious and baselined, so "Cart has no blocking accessibility violations" passed. Report: `a11y-report/results.json`.
+- **Contradicts:** `docs/PRODUCT.md` line 63 (text has enough contrast against its background, 4.5:1 for normal text). WCAG 2.1 AA success criterion 1.4.3 Contrast (Minimum), axe tags `wcag2aa` and `wcag143`: 4.5:1 for normal text and 3:1 for large text.
+- **Suggested fix:** Darken the price color until every price meets 4.5:1, including the large prices that axe measured against a 3:1 bar.
 
 ### The search field has no name a screen reader can announce
 
-- **Where:** `SearchBox` (`web/src/components/SearchBox.tsx`), on Browse
+- **Where:** axe rule `label` on the Browse search field (`.SearchBox-module__input` in `SearchBox`). Sign in, Plant, Cart, and Checkout have no `label` violation.
 - **Category:** Accessibility
-- **Impact:** The search field is announced with no name. "Search plants" is only a visual hint, so a customer using a screen reader cannot tell what the field is for.
-- **Evidence:** **Executed:** `web/cypress/component/SearchBox.cy.tsx`, SB-16 "gives the search field a name", fails. With `value=""`, the searchbox accessible name is empty.
-- **Contradicts:** `docs/PRODUCT.md` line 61 (every button and form field has a name a screen reader can announce)
+- **Impact:** Critical. The search field is announced with no name. "Search plants" is only a visual hint, so a customer using a screen reader cannot tell what the field is for.
+- **Evidence:** **Executed:** `web/cypress/component/SearchBox.cy.tsx`, SB-16 "gives the search field a name", fails. With `value=""`, the searchbox accessible name is empty. **Executed:** `tests/a11y/pages.spec.ts`, "Browse has no blocking accessibility violations", fails. The scan reports one critical `label` node: `<input class="SearchBox-module__input" type="search" value="">` has no label, `aria-label`, `aria-labelledby`, title, or placeholder. Report: `a11y-report/results.json` (4 Nov 2026).
+- **Contradicts:** `docs/PRODUCT.md` line 61 (every button and form field has a name a screen reader can announce). WCAG 2.1 A success criterion 4.1.2 Name, Role, Value, axe tags `wcag2a` and `wcag412`.
 - **Suggested fix:** Give the search field a name a screen reader can announce.
 
 ### Keyboard focus on the search field is not visible
@@ -102,12 +102,21 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 
 ### The save button on a plant card has no name a screen reader can announce
 
-- **Where:** `PlantCard` save button (`web/src/components/PlantCard.tsx`), on Browse
+- **Where:** axe rule `button-name` on the Browse plant-card save button (`.PlantCard-module__save`), 12 buttons, one per plant. Plant, Sign in, Cart, and Checkout have no `button-name` violation.
 - **Category:** Accessibility
-- **Impact:** The heart is hidden from assistive tech, and the button has no other name. A customer using a screen reader hears an unlabeled button and cannot tell it saves the plant.
-- **Evidence:** **Executed:** `web/cypress/component/PlantCard.cy.tsx`, PC-15 "gives the save button a name and does not announce the heart", fails. The heart stays hidden. The button's accessible name is empty.
-- **Contradicts:** `docs/PRODUCT.md` line 61 (every button has a name a screen reader can announce)
+- **Impact:** Critical. The heart is hidden from assistive tech, and the button has no other name. A customer using a screen reader hears an unlabeled button and cannot tell it saves the plant.
+- **Evidence:** **Executed:** `web/cypress/component/PlantCard.cy.tsx`, PC-15 "gives the save button a name and does not announce the heart", fails. The heart stays hidden. The button's accessible name is empty. **Executed:** `tests/a11y/pages.spec.ts`, "Browse has no blocking accessibility violations", fails on 12 critical `button-name` nodes. Example: `li:nth-child(1) > article > .PlantCard-module__save[type="button"]`, `<button type="button" class="PlantCard-module__save " aria-pressed="false">`, with no visible text, `aria-label`, `aria-labelledby`, or title. Report: `a11y-report/results.json` (4 Nov 2026).
+- **Contradicts:** `docs/PRODUCT.md` line 61 (every button has a name a screen reader can announce). WCAG 2.1 A success criterion 4.1.2 Name, Role, Value, axe tags `wcag2a` and `wcag412`.
 - **Suggested fix:** Give the save button a name a screen reader can announce, and keep the heart hidden.
+
+### The plant photo has no alternative text
+
+- **Where:** axe rule `image-alt` on the Plant page hero (`img.Pages-module__heroImage`, `/plants/monstera.svg`). Browse, Sign in, Cart, and Checkout have no `image-alt` violation.
+- **Category:** Accessibility
+- **Impact:** Critical. The plant picture is announced with no description, so a customer using a screen reader does not hear what the photo shows.
+- **Evidence:** **Executed:** `tests/a11y/pages.spec.ts`, "Plant has no blocking accessibility violations", fails. The scan reports one critical `image-alt` node: `<img class="Pages-module__heroImage" src="/plants/monstera.svg">` has no `alt`, `aria-label`, `aria-labelledby`, or title. Report: `a11y-report/results.json` (4 Nov 2026). The card photo is a different image: PC-14 passed, and its alternative text is "Snake Plant".
+- **Contradicts:** `docs/PRODUCT.md` line 62 (every meaningful image has alternative text). WCAG 2.1 A success criterion 1.1.1 Non-text Content, axe tags `wcag2a` and `wcag111`.
+- **Suggested fix:** Give the plant photo alternative text that names the plant.
 
 ## Suspicions
 
@@ -172,7 +181,6 @@ These tests failed, and the recorded evidence does not confirm that the product 
 Each line looked different from `docs/PRODUCT.md` while reading the code or walking the shop. None of these has a failing test yet.
 
 - Following "Likes the same light" from Fiddle Leaf Fig to Rubber Plant left the address at `/plants/pl-rubber` while the heading still read "Fiddle Leaf Fig". `usePlant` caches every plant under the query key `['plant']`, with no plant id. May contradict line 35 (the plant page always shows the plant in the address bar, including after that link).
-- The plant photo has no alternative text (`<img>` with `src` and `className` only) and was missing from the accessibility tree on the plant page. May contradict line 62 (every meaningful image has alternative text). The card photo is a different image: PC-14 passed, and its alternative text is "Snake Plant".
 
 ## Questions — not bugs
 

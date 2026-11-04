@@ -81,7 +81,11 @@ VIOLATION_RULES = [
 
 
 def read_hook_input() -> dict:
-    raw = sys.stdin.read().lstrip("\ufeff")
+    raw_bytes = sys.stdin.buffer.read()
+    if raw_bytes.startswith((b"\xff\xfe", b"\xfe\xff")):
+        raw = raw_bytes.decode("utf-16")
+    else:
+        raw = raw_bytes.decode("utf-8-sig")
     if not raw.strip():
         print("guard-constitution: empty stdin", file=sys.stderr)
         sys.exit(1)
