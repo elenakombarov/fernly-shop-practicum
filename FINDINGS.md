@@ -19,6 +19,24 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 31 (every price is dollars with two decimals: `$12.50`, never `$12.5`). SZ-03 also cites line 33 (Medium adds the amount shown).
 - **Suggested fix:** Format every amount with two decimal places.
 
+### Price: high to low returns the cheapest plant first
+
+- **Where:** `GET /api/plants?sort=price-desc` (`api/src/store.ts`, `listPlants`)
+- **Category:** Browse
+- **Impact:** A customer, or any client, that asks for the highest price first is given the cheapest plants. The $0.99 Succulent Cutting leads the list, and the $189 plant does not. Someone comparing by price can treat the cheapest plant as the most expensive.
+- **Evidence:** **Executed:** `tests/api/plants.spec.ts`, "price-desc returns the most expensive plant first", fails. The catalog maximum is `189`. Expected the first `price` to be `189`. Actual first plant is Succulent Cutting at `0.99`, then Aloe Vera at `9.99`, then Pothos 'Golden' at `12.5`.
+- **Contradicts:** `docs/PRODUCT.md` line 25 (Price: high to low means most expensive first). `GET /openapi.json` describes `price-desc` as highest first on `GET /api/plants`.
+- **Suggested fix:** Sort `price-desc` with the highest price first.
+
+### Price: high to low shows the cheapest plant first
+
+- **Where:** Browse (`/`), Sort by "Price: high to low"
+- **Category:** Browse
+- **Impact:** Choosing "Price: high to low" puts Succulent Cutting first on the shop. The most expensive plant, Variegated Thai Constellation Monstera (Collector's Edition, Limited Greenhouse Batch), is not the first card. A customer using that sort sees the opposite of what the control promises.
+- **Evidence:** **Executed:** `tests/e2e/browse.spec.ts`, "choosing Price: high to low shows the most expensive plant first", fails. Expected the first plant heading to be "Variegated Thai Constellation Monstera (Collector's Edition, Limited Greenhouse Batch)". The first heading was "Succulent Cutting".
+- **Contradicts:** `docs/PRODUCT.md` line 25 (Price: high to low means most expensive first).
+- **Suggested fix:** After "Price: high to low" is chosen, show the most expensive plant first. The control already asks for `price-desc`; the list it receives has to come back in that order.
+
 ### A catalog load failure looks like an empty search
 
 - **Where:** Browse page (`web/src/pages/BrowsePage.tsx`)
@@ -45,6 +63,15 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Evidence:** **Executed:** `web/cypress/component/CareLevelBadge.cy.tsx`, CB-03 "shows Expert care with three filled dots", fails. `level={3}` renders "Moderate care" and three filled dots. CB-01 (Easy care, one dot) and CB-02 (Moderate care, two dots) passed in the same run.
 - **Contradicts:** `docs/PRODUCT.md` line 32 (care level 1 is Easy, 2 is Moderate, 3 is Expert)
 - **Suggested fix:** Use the Expert label for level 3.
+
+### A plant's rating is a string, not a number
+
+- **Where:** `GET /api/plants/{plantId}` (`api/src/store.ts`, `getPlant`)
+- **Category:** API
+- **Impact:** A client that checks the plant against the published `Plant` schema rejects it. Monstera Deliciosa comes back with `rating` `"4.7"`, a string, so numeric comparisons and schema checks fail. The plant page converts the value before showing it, so a shopper can still read the rating, but the contract the API publishes is not what it returns.
+- **Evidence:** **Executed:** `tests/api/plants.spec.ts`, "a plant matches the Plant schema", fails. `GET /api/plants/pl-monstera` was checked against the `Plant` schema. Expected `rating` to be a number. Actual: schema error `/rating: must be number`. The body has `rating` `"4.7"` (a string).
+- **Contradicts:** `GET /openapi.json` schema `Plant`: `rating` is a number from 0 to 5. `docs/PRODUCT.md` line 3 names that document as the API contract.
+- **Suggested fix:** Return `rating` as a number on `GET /api/plants/{plantId}`.
 
 ### The price color is below 4.5:1 on the shop background
 
