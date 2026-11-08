@@ -18,7 +18,7 @@ concurrency:
 jobs:
   plan:
     if: ${{ github.event.action != 'labeled' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -134,6 +134,48 @@ jobs:
       - name: Add Cursor CLI to PATH
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Allow the Cursor CLI sandbox helper to create a user namespace
+        run: |
+          set -euo pipefail
+          echo 'cursor-sandbox-apparmor cursor-sandbox-apparmor/add-cursor-repo boolean false' \
+            | sudo debconf-set-selections
+          sudo apt-get update
+          curl -fsSL https://downloads.cursor.com/lab/enterprise/cursor-sandbox-apparmor_0.6.2_all.deb \
+            -o "$RUNNER_TEMP/cursor-sandbox-apparmor.deb"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            "$RUNNER_TEMP/cursor-sandbox-apparmor.deb"
+          if [ -e /etc/apt/sources.list.d/cursor-apparmor.sources ] \
+            || [ -e /etc/apt/sources.list.d/cursor-apparmor.list ]; then
+            echo "Refusing to keep the Cursor apt repository."
+            exit 1
+          fi
+          if ! find "$HOME/.local/share/cursor-agent/versions" \
+            -mindepth 2 -maxdepth 2 -type f -name cursorsandbox | grep -q .; then
+            echo "Cursor sandbox helper is not at the AppArmor profile path."
+            exit 1
+          fi
+          profile=/etc/apparmor.d/cursor-sandbox-remote
+          edited="$RUNNER_TEMP/cursor-sandbox-remote"
+          sudo awk '
+            /^profile cursor_sandbox_agent_cli / { in_cli = 1 }
+            in_cli && /^profile / && !/^profile cursor_sandbox_agent_cli / { in_cli = 0 }
+            in_cli && $0 == "  #userns," { print "  userns,"; replaced++; next }
+            { print }
+            END { if (replaced != 1) exit 1 }
+          ' "$profile" > "$edited"
+          sudo cp "$edited" "$profile"
+          if [ "$(sudo grep -c '^  #userns,$' "$profile")" -ne 1 ] \
+            || [ "$(sudo grep -c '^  userns,$' "$profile")" -ne 1 ]; then
+            echo "Expected userns to be enabled only for the CLI profile."
+            exit 1
+          fi
+          sudo apparmor_parser -r "$profile"
+          if ! sudo grep -q '^cursor_sandbox_agent_cli (enforce)' \
+            /sys/kernel/security/apparmor/profiles; then
+            echo "cursor_sandbox_agent_cli did not load in enforce mode."
+            exit 1
+          fi
+
       - name: Run change-triage
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
@@ -164,6 +206,14 @@ jobs:
           mkdir -p pr/docs/test-plans
           if [ -f "$ws/docs/test-plans/${plan_branch}.md" ]; then
             cp "$ws/docs/test-plans/${plan_branch}.md" "pr/docs/test-plans/${plan_branch}.md"
+          fi
+
+      - name: Unload the Cursor sandbox AppArmor profile
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f /etc/apparmor.d/cursor-sandbox-remote ]; then
+            sudo apparmor_parser -R /etc/apparmor.d/cursor-sandbox-remote
           fi
 
       - name: Refuse output that contains the API key
@@ -229,7 +279,7 @@ jobs:
 
   tests:
     if: ${{ github.event.action == 'labeled' && github.event.label.name == 'plan-approved' }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       BASE_SHA: ${{ github.event.pull_request.base.sha }}
       HEAD_SHA: ${{ github.event.pull_request.head.sha }}
@@ -378,6 +428,48 @@ jobs:
       - name: Add Cursor CLI to PATH
         run: echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
+      - name: Allow the Cursor CLI sandbox helper to create a user namespace
+        run: |
+          set -euo pipefail
+          echo 'cursor-sandbox-apparmor cursor-sandbox-apparmor/add-cursor-repo boolean false' \
+            | sudo debconf-set-selections
+          sudo apt-get update
+          curl -fsSL https://downloads.cursor.com/lab/enterprise/cursor-sandbox-apparmor_0.6.2_all.deb \
+            -o "$RUNNER_TEMP/cursor-sandbox-apparmor.deb"
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            "$RUNNER_TEMP/cursor-sandbox-apparmor.deb"
+          if [ -e /etc/apt/sources.list.d/cursor-apparmor.sources ] \
+            || [ -e /etc/apt/sources.list.d/cursor-apparmor.list ]; then
+            echo "Refusing to keep the Cursor apt repository."
+            exit 1
+          fi
+          if ! find "$HOME/.local/share/cursor-agent/versions" \
+            -mindepth 2 -maxdepth 2 -type f -name cursorsandbox | grep -q .; then
+            echo "Cursor sandbox helper is not at the AppArmor profile path."
+            exit 1
+          fi
+          profile=/etc/apparmor.d/cursor-sandbox-remote
+          edited="$RUNNER_TEMP/cursor-sandbox-remote"
+          sudo awk '
+            /^profile cursor_sandbox_agent_cli / { in_cli = 1 }
+            in_cli && /^profile / && !/^profile cursor_sandbox_agent_cli / { in_cli = 0 }
+            in_cli && $0 == "  #userns," { print "  userns,"; replaced++; next }
+            { print }
+            END { if (replaced != 1) exit 1 }
+          ' "$profile" > "$edited"
+          sudo cp "$edited" "$profile"
+          if [ "$(sudo grep -c '^  #userns,$' "$profile")" -ne 1 ] \
+            || [ "$(sudo grep -c '^  userns,$' "$profile")" -ne 1 ]; then
+            echo "Expected userns to be enabled only for the CLI profile."
+            exit 1
+          fi
+          sudo apparmor_parser -r "$profile"
+          if ! sudo grep -q '^cursor_sandbox_agent_cli (enforce)' \
+            /sys/kernel/security/apparmor/profiles; then
+            echo "cursor_sandbox_agent_cli did not load in enforce mode."
+            exit 1
+          fi
+
       - name: Run the agent with the approved plan
         env:
           CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
@@ -422,6 +514,14 @@ jobs:
           fi
           if [ -f "$ws/FINDINGS.md" ]; then
             cp "$ws/FINDINGS.md" pr/FINDINGS.md
+          fi
+
+      - name: Unload the Cursor sandbox AppArmor profile
+        if: always()
+        run: |
+          set -euo pipefail
+          if [ -f /etc/apparmor.d/cursor-sandbox-remote ]; then
+            sudo apparmor_parser -R /etc/apparmor.d/cursor-sandbox-remote
           fi
 
       - name: Set up Node.js
