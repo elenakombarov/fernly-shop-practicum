@@ -12,6 +12,10 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  isIssuesDisabledError,
+  repoHasIssuesEnabled,
+} from './github-issues.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_PATH = path.join(ROOT, 'docs/QA-METRICS.md');
@@ -196,20 +200,47 @@ function artifactNamesForRun(repo, runId) {
 }
 
 function loadQaFindings(repo) {
-  return ghJson([
-    'issue',
-    'list',
-    '--repo',
-    repo,
-    '--label',
-    'qa-finding',
-    '--state',
-    'all',
-    '--limit',
-    '500',
-    '--json',
-    'number,body,state,stateReason',
-  ]);
+  try {
+    if (!repoHasIssuesEnabled(repo)) {
+      console.log(
+        'GitHub Issues are disabled for this repository — skipping qa-finding issue metrics.',
+      );
+      return [];
+    }
+  } catch (err) {
+    if (isIssuesDisabledError(err)) {
+      console.log(
+        'GitHub Issues are disabled for this repository — skipping qa-finding issue metrics.',
+      );
+      return [];
+    }
+    throw err;
+  }
+
+  try {
+    return ghJson([
+      'issue',
+      'list',
+      '--repo',
+      repo,
+      '--label',
+      'qa-finding',
+      '--state',
+      'all',
+      '--limit',
+      '500',
+      '--json',
+      'number,body,state,stateReason',
+    ]);
+  } catch (err) {
+    if (isIssuesDisabledError(err)) {
+      console.log(
+        'GitHub Issues are disabled for this repository — skipping qa-finding issue metrics.',
+      );
+      return [];
+    }
+    throw err;
+  }
 }
 
 function issueLinksToPr(body, repo, prNumber) {

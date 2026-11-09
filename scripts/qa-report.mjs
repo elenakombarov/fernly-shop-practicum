@@ -13,6 +13,11 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  filterIssuesToCreate,
+  isIssuesDisabledError,
+  repoHasIssuesEnabled,
+} from './github-issues.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MARKER = '<!-- fernly-qa-report -->';
@@ -622,35 +627,62 @@ function publishCommand(args) {
     ? JSON.parse(readFileSync(issuesPath, 'utf8'))
     : [];
 
-  const listArgs = [
-    'issue',
-    'list',
-    '--repo',
-    repo,
-    '--label',
-    'qa-finding',
-    '--state',
-    'all',
-    '--json',
-    'body',
-    '--limit',
-    '500',
-  ];
-  if (dryRun) {
-    console.log('[dry-run] gh', listArgs.join(' '));
+  let issuesEnabled = true;
+  if (!dryRun) {
+    try {
+      issuesEnabled = repoHasIssuesEnabled(repo);
+    } catch (err) {
+      if (isIssuesDisabledError(err)) {
+        issuesEnabled = false;
+      } else {
+        throw err;
+      }
+    }
   }
-  const listed = dryRun
-    ? { stdout: '[]' }
-    : ghSpawn(listArgs, { stdio: 'pipe' });
-  if (!dryRun && listed.status !== 0) {
-    process.exit(listed.status ?? 1);
-  }
+
   const existingKeys = new Set();
-  for (const row of JSON.parse(listed.stdout || '[]')) {
-    const keyMatch = row.body?.match(
-      new RegExp(`${FINDING_KEY_MARKER}\\s+([\\w-]+)\\s*-->`),
+  if (issuesEnabled) {
+    const listArgs = [
+      'issue',
+      'list',
+      '--repo',
+      repo,
+      '--label',
+      'qa-finding',
+      '--state',
+      'all',
+      '--json',
+      'body',
+      '--limit',
+      '500',
+    ];
+    if (dryRun) {
+      console.log('[dry-run] gh', listArgs.join(' '));
+    }
+    const listed = dryRun
+      ? { stdout: '[]', status: 0, stderr: '' }
+      : ghSpawn(listArgs, { stdio: 'pipe' });
+    if (!dryRun && listed.status !== 0) {
+      if (isIssuesDisabledError(listed)) {
+        issuesEnabled = false;
+        console.log(
+          'GitHub Issues are disabled for this repository — skipping issue lookup/creation; continuing with PR comments.',
+        );
+      } else {
+        process.exit(listed.status ?? 1);
+      }
+    } else {
+      for (const row of JSON.parse(listed.stdout || '[]')) {
+        const keyMatch = row.body?.match(
+          new RegExp(`${FINDING_KEY_MARKER}\\s+([\\w-]+)\\s*-->`),
+        );
+        if (keyMatch) existingKeys.add(keyMatch[1]);
+      }
+    }
+  } else {
+    console.log(
+      'GitHub Issues are disabled for this repository — skipping issue lookup/creation; continuing with PR comments.',
     );
-    if (keyMatch) existingKeys.add(keyMatch[1]);
   }
 
   const viewArgs = ['pr', 'view', pr, '--repo', repo, '--json', 'comments'];
@@ -698,8 +730,14 @@ function publishCommand(args) {
     }
   }
 
-  for (const issue of issues) {
-    if (existingKeys.has(issue.key)) continue;
+  const toCreate = filterIssuesToCreate(issues, existingKeys, { issuesEnabled });
+  if (!issuesEnabled && issues.length) {
+    console.log(
+      `Skipped creating ${issues.length} finding issue(s) because Issues are disabled.`,
+    );
+  }
+
+  for (const issue of toCreate) {
     const bodyFile = path.join(PATHS.outDir, `issue-${issue.key}.md`);
     writeFileSync(bodyFile, issue.body);
     const createIssueArgs = [
@@ -718,7 +756,15 @@ function publishCommand(args) {
       console.log('[dry-run] gh', createIssueArgs.join(' '));
     } else {
       const r = ghSpawn(createIssueArgs);
-      if (r.status !== 0) process.exit(r.status ?? 1);
+      if (r.status !== 0) {
+        if (isIssuesDisabledError(r)) {
+          console.log(
+            'GitHub Issues became unavailable during create — stopping further issue creation; PR comment already published.',
+          );
+          break;
+        }
+        process.exit(r.status ?? 1);
+      }
     }
   }
 }
