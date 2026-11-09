@@ -2,7 +2,9 @@
 
 A suspicion is not a finding until a test proves it. Confirmed findings are listed first, in severity order: money and privacy, then broken flows, then everything else.
 
-### Prices drop trailing zeros
+Confirmed entries use stable ids (`F-01`, `F-02`, …) so QA reporting and GitHub issues stay deterministic.
+
+### F-01. Prices drop trailing zeros
 
 - **Where:** `formatPrice` in `web/src/money.ts`, shown by `PriceTag`, `PlantCard`, `SizePicker`, and the browse card
 - **Category:** Money
@@ -19,7 +21,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 31 (every price is dollars with two decimals: `$12.50`, never `$12.5`). SZ-03 also cites line 33 (Medium adds the amount shown).
 - **Suggested fix:** Format every amount with two decimal places.
 
-### Price: high to low returns the cheapest plant first
+### F-02. Price: high to low returns the cheapest plant first
 
 - **Where:** `GET /api/plants?sort=price-desc` (`api/src/store.ts`, `listPlants`)
 - **Category:** Browse
@@ -28,7 +30,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 25 (Price: high to low means most expensive first). `GET /openapi.json` describes `price-desc` as highest first on `GET /api/plants`.
 - **Suggested fix:** Sort `price-desc` with the highest price first.
 
-### Price: high to low shows the cheapest plant first
+### F-03. Price: high to low shows the cheapest plant first
 
 - **Where:** Browse (`/`), Sort by "Price: high to low"
 - **Category:** Browse
@@ -37,7 +39,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 25 (Price: high to low means most expensive first).
 - **Suggested fix:** After "Price: high to low" is chosen, show the most expensive plant first. The control already asks for `price-desc`; the list it receives has to come back in that order.
 
-### A catalog load failure looks like an empty search
+### F-04. A catalog load failure looks like an empty search
 
 - **Where:** Browse page (`web/src/pages/BrowsePage.tsx`)
 - **Category:** Browse
@@ -46,7 +48,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 27 (if the catalog can't be loaded, the page says so and offers Try again, and never pretends there are no plants)
 - **Suggested fix:** When the plants request fails, show an alert and a Try again button, and do not use the empty-filter copy.
 
-### The + button stays enabled when the quantity equals the stock left
+### F-05. The + button stays enabled when the quantity equals the stock left
 
 - **Where:** `QuantityStepper` (`web/src/components/QuantityStepper.tsx`), on the plant page and in the cart
 - **Category:** Components
@@ -55,7 +57,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 34 (at the stock limit, the + button is disabled)
 - **Suggested fix:** Disable increase when `value >= max`, not only when `value > max`.
 
-### Care level 3 says Moderate care
+### F-06. Care level 3 says Moderate care
 
 - **Where:** `CareLevelBadge` (`web/src/components/CareLevelBadge.tsx`)
 - **Category:** Components
@@ -64,7 +66,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 32 (care level 1 is Easy, 2 is Moderate, 3 is Expert)
 - **Suggested fix:** Use the Expert label for level 3.
 
-### A plant's rating is a string, not a number
+### F-07. A plant's rating is a string, not a number
 
 - **Where:** `GET /api/plants/{plantId}` (`api/src/store.ts`, `getPlant`)
 - **Category:** API
@@ -73,7 +75,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `GET /openapi.json` schema `Plant`: `rating` is a number from 0 to 5. `docs/PRODUCT.md` line 3 names that document as the API contract.
 - **Suggested fix:** Return `rating` as a number on `GET /api/plants/{plantId}`.
 
-### The price color is below 4.5:1 on the shop background
+### F-08. The price color is below 4.5:1 on the shop background
 
 - **Where:** axe rule `color-contrast` on `PriceTag` (`#8dbb8a`). Pages: Browse (12 prices), Plant (1 price), Cart (5 prices), Checkout (3 prices). Sign in has none.
 - **Category:** Accessibility
@@ -82,7 +84,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 63 (text has enough contrast against its background, 4.5:1 for normal text). WCAG 2.1 AA success criterion 1.4.3 Contrast (Minimum), axe tags `wcag2aa` and `wcag143`: 4.5:1 for normal text and 3:1 for large text.
 - **Suggested fix:** Darken the price color until every price meets 4.5:1, including the large prices that axe measured against a 3:1 bar.
 
-### The search field has no name a screen reader can announce
+### F-09. The search field has no name a screen reader can announce
 
 - **Where:** axe rule `label` on the Browse search field (`.SearchBox-module__input` in `SearchBox`). Sign in, Plant, Cart, and Checkout have no `label` violation.
 - **Category:** Accessibility
@@ -91,7 +93,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 61 (every button and form field has a name a screen reader can announce). WCAG 2.1 A success criterion 4.1.2 Name, Role, Value, axe tags `wcag2a` and `wcag412`.
 - **Suggested fix:** Give the search field a name a screen reader can announce.
 
-### Keyboard focus on the search field is not visible
+### F-10. Keyboard focus on the search field is not visible
 
 - **Where:** `SearchBox` input (`outline: none` in `web/src/components/SearchBox.module.css`)
 - **Category:** Accessibility
@@ -100,7 +102,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 64 (everything works with the keyboard alone, and focus is always visible)
 - **Suggested fix:** Remove `outline: none` from the search field so the focus outline stays visible.
 
-### The save button on a plant card has no name a screen reader can announce
+### F-11. The save button on a plant card has no name a screen reader can announce
 
 - **Where:** axe rule `button-name` on the Browse plant-card save button (`.PlantCard-module__save`), 12 buttons, one per plant. Plant, Sign in, Cart, and Checkout have no `button-name` violation.
 - **Category:** Accessibility
@@ -109,7 +111,7 @@ A suspicion is not a finding until a test proves it. Confirmed findings are list
 - **Contradicts:** `docs/PRODUCT.md` line 61 (every button has a name a screen reader can announce). WCAG 2.1 A success criterion 4.1.2 Name, Role, Value, axe tags `wcag2a` and `wcag412`.
 - **Suggested fix:** Give the save button a name a screen reader can announce, and keep the heart hidden.
 
-### The plant photo has no alternative text
+### F-12. The plant photo has no alternative text
 
 - **Where:** axe rule `image-alt` on the Plant page hero (`img.Pages-module__heroImage`, `/plants/monstera.svg`). Browse, Sign in, Cart, and Checkout have no `image-alt` violation.
 - **Category:** Accessibility

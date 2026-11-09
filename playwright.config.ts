@@ -1,4 +1,4 @@
-import { defineConfig } from '@playwright/test';
+import { defineConfig, devices } from '@playwright/test';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -10,11 +10,35 @@ if (!apiURL || !webURL) {
   throw new Error('API_URL and WEB_URL must be set. Copy .env.example to .env.');
 }
 
+const visualProject =
+  process.env.CI || process.env.VISUAL
+    ? [
+        {
+          name: 'visual',
+          testDir: 'tests/visual',
+          testMatch: /.*\.spec\.ts/,
+          dependencies: ['setup' as const],
+          use: {
+            baseURL: webURL,
+            ...devices['Desktop Chrome'],
+            viewport: { width: 1280, height: 800 },
+          },
+        },
+      ]
+    : [];
+
 export default defineConfig({
   testDir: 'tests',
+  expect: {
+    toHaveScreenshot: {
+      animations: 'disabled',
+      maxDiffPixels: 0,
+    },
+  },
   reporter: [
     ['list'],
     ['html', { open: 'never' }],
+    ['json', { outputFile: 'reports/playwright.json' }],
     [
       './tests/a11y/reporter.ts',
       {
@@ -60,5 +84,6 @@ export default defineConfig({
       dependencies: ['setup'],
       use: { baseURL: webURL },
     },
+    ...visualProject,
   ],
 });

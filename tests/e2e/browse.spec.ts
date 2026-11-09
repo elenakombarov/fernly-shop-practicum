@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { BrowsePage } from '../pages/BrowsePage';
 
 interface CatalogPlant {
   name: string;
@@ -32,9 +33,10 @@ test(
     expect(plants.length).toBeGreaterThan(0);
     const mostExpensive = plants.reduce((best, plant) => (plant.price > best.price ? plant : best));
 
-    await page.goto('/');
-    await expect(page.getByRole('heading', { name: `${plants.length} plants` })).toBeVisible();
-    await page.getByRole('combobox', { name: 'Sort by' }).selectOption({ label: 'Price: high to low' });
-    await expect(page.getByRole('article').first().getByRole('heading')).toHaveText(mostExpensive.name);
+    const browse = new BrowsePage(page);
+    await browse.open();
+    await expect(browse.plantsHeading(plants.length)).toBeVisible();
+    await browse.sortByPriceHighToLow();
+    await expect(browse.firstPlantCardHeading).toHaveText(mostExpensive.name);
   },
 );
