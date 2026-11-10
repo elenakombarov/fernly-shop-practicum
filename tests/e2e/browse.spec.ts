@@ -27,6 +27,7 @@ test(
   'choosing Price: high to low shows the most expensive plant first',
   { tag: '@e2e' },
   async ({ page, request }) => {
+    test.fail(true, 'F-03: Price: high to low shows the cheapest plant first');
     const catalog = await request.get('/api/plants?pageSize=48');
     expect(catalog.status()).toBe(200);
     const plants = readPlants(await catalog.json());

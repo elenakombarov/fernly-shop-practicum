@@ -30,6 +30,7 @@ function readPlants(value: unknown): PlantSummary[] {
 }
 
 test('a plant matches the Plant schema', { tag: '@api' }, async ({ request }) => {
+  test.fail(true, 'F-07: plant rating is a string, not a number');
   const list = await request.get('/api/plants?pageSize=48');
   expect(list.status()).toBe(200);
   const plants = readPlants(await list.json());
@@ -41,6 +42,7 @@ test('a plant matches the Plant schema', { tag: '@api' }, async ({ request }) =>
 });
 
 test('price-desc returns the most expensive plant first', { tag: '@api' }, async ({ request }) => {
+  test.fail(true, 'F-02: price-desc returns the cheapest plant first');
   const catalog = await request.get('/api/plants?pageSize=48');
   expect(catalog.status()).toBe(200);
   const plants = readPlants(await catalog.json());

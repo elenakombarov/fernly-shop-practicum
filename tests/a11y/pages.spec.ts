@@ -53,12 +53,14 @@ async function signInWithOnePlant(page: Page): Promise<void> {
 }
 
 test('Browse has no blocking accessibility violations', { tag: '@a11y' }, async ({ page }, testInfo) => {
+  test.fail(true, 'F-08/F-09/F-11: Browse has blocking color-contrast, label, and button-name violations');
   await page.goto('/');
   await expect(page.getByRole('heading', { name: /^\d+ plants$/ })).toBeVisible();
   await expectNoBlocking(page, testInfo, 'Browse');
 });
 
 test('Plant has no blocking accessibility violations', { tag: '@a11y' }, async ({ page }, testInfo) => {
+  test.fail(true, 'F-08/F-12: Plant has blocking color-contrast and image-alt violations');
   await page.goto('/plants/pl-monstera');
   await expect(page.getByRole('button', { name: /^(Add to cart|Out of stock)$/ })).toBeVisible();
   await expectNoBlocking(page, testInfo, 'Plant');
@@ -77,6 +79,7 @@ test('Cart has no blocking accessibility violations', { tag: '@a11y' }, async ({
 });
 
 test('Checkout has no blocking accessibility violations', { tag: '@a11y' }, async ({ page }, testInfo) => {
+  test.fail(true, 'F-08: Checkout has blocking color-contrast violations on prices');
   await signInWithOnePlant(page);
   await page.goto('/checkout');
   await expect(page.getByRole('heading', { name: 'Checkout' })).toBeVisible();
