@@ -19,11 +19,19 @@ const checks = [
   ['report publish step', testsYml.includes('node scripts/qa-report.mjs publish')],
   ['single comment marker', reportScript.includes('<!-- fernly-qa-report -->')],
   ['duplicate issue avoidance', reportScript.includes('qa-finding') && reportScript.includes('existingKeys')],
+  [
+    'publish uses REST PR comments (not GraphQL comment id)',
+    reportScript.includes('issues/${pr}/comments') &&
+      reportScript.includes('commentRestId') &&
+      reportScript.includes('publishQaReportComment') &&
+      !reportScript.includes("'pr', 'view'"),
+  ],
   ['FINDINGS F-ids', (findings.match(/^### F-\d+\./gm) || []).length === 12],
   ['fixtures present', existsSync(path.join(root, 'scripts/fixtures/qa-report/playwright.json'))],
   ['comment.md generated', comment.startsWith('<!-- fernly-qa-report -->')],
   ['run.json generated', run.findings === 12 && run.failed === 5],
-  ['issues.json generated', issues.length === 12],
+  // Against origin/init, existing findings are not new — issues.json stays empty.
+  ['issues.json generated', Array.isArray(issues) && issues.length === 0 && run.newFindings === 0],
   ['a11y included', comment.includes('Accessibility summary')],
   ['known failures visible', comment.includes('### Failed tests')],
   ['cypress self-closing pass counted', run.totals['Cypress component'].passed === 1],
