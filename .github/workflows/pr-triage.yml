@@ -270,6 +270,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           if [ ! -s "$RUNNER_TEMP/plan.md" ]; then
@@ -661,6 +662,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           gh pr comment "$PR_NUMBER" --body-file "$RUNNER_TEMP/results.md"
