@@ -8,8 +8,8 @@
       "unitPrice": 9.99,
       "quantity": 1,
       "lineTotal": 9.99,
-      "stock": 18,
-      "imageUrl": "/plants/succulent.svg"
+      "stock": 4,
+      "imageUrl": "/images/aloe.jpg"
     }
   ],
   "itemCount": 1,
