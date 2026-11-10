@@ -1,0 +1,112 @@
+name: Visual baselines
+
+on:
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: Why baselines are being refreshed (included in the commit message and PR)
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: visual-baselines-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx playwright install --with-deps chromium
+
+      - name: Use the local practice env
+        run: cp .env.example .env
+
+      - name: Refresh visual snapshots
+        run: npx playwright test --project=visual --update-snapshots=all
+        env:
+          CI: true
+
+      - name: Commit baselines when tests/visual changed
+        id: commit
+        env:
+          REASON: ${{ inputs.reason }}
+          RUN_ID: ${{ github.run_id }}
+          BASE_REF: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if ! git status --porcelain tests/visual | grep -q .; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No changes under tests/visual; nothing to commit." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          branch="visual-baselines/${RUN_ID}"
+          git checkout -b "$branch"
+          git add tests/visual
+          git commit -m "Visual baselines: ${REASON}"
+
+          git push origin "$branch"
+
+          compare_url="https://github.com/${GITHUB_REPOSITORY}/compare/${BASE_REF}...${branch}"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "branch=${branch}" >> "$GITHUB_OUTPUT"
+          echo "compare_url=${compare_url}" >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Visual baselines branch"
+            echo ""
+            echo "Pushed \`${branch}\` (base: \`${BASE_REF}\`)."
+            echo ""
+            echo "[Open compare view](${compare_url})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open pull request for baseline review
+        if: ${{ steps.commit.outputs.changed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REASON: ${{ inputs.reason }}
+          BRANCH: ${{ steps.commit.outputs.branch }}
+          BASE_REF: ${{ github.ref_name }}
+          COMPARE_URL: ${{ steps.commit.outputs.compare_url }}
+        run: |
+          set -euo pipefail
+          body_file=$(mktemp)
+          {
+            echo "## Summary"
+            echo "Manual visual baseline refresh from the **Visual baselines** workflow."
+            echo
+            echo "**Reason:** ${REASON}"
+            echo
+            echo "Compare: ${COMPARE_URL}"
+            echo
+            echo "## Test plan"
+            echo "- [ ] Review screenshot diffs in this PR"
+            echo "- [ ] Confirm CI visual tests pass against the new Linux baselines"
+            echo "- [ ] Do not merge if diffs are unintentional"
+          } > "$body_file"
+
+          pr_url=$(gh pr create \
+            --base "$BASE_REF" \
+            --head "$BRANCH" \
+            --title "Visual baselines: ${REASON}" \
+            --body-file "$body_file")
+
+          echo "Opened PR for review: ${pr_url}" >> "$GITHUB_STEP_SUMMARY"
+          echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"

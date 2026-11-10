@@ -47,8 +47,9 @@ await expectSchema(request, await plant.json(), 'Plant');
 const response = await request.get('/api/plants');
 expect(response.status()).toBe(200);
 
-await page.goto('/');
-await page.getByRole('combobox', { name: 'Sort by' }).selectOption({ label: 'Price: high to low' });
+const browse = new BrowsePage(page);
+await browse.goto();
+await browse.sortByPriceHighToLow();
 ```
 
 **BAD:**
@@ -101,7 +102,7 @@ expect(missing.status()).toBe(404);
 
 ## 6. Assertions
 
-**Rule:** Assert the HTTP status. On every HTTP 400, assert the exact documented `rule`; a 400 with the wrong `rule` fails the test. Assert meaningful values, not only that a property exists. Validate a response body with `expectSchema` from `tests/helpers/schema.ts`. It reads `GET /openapi.json` through the request fixture, so the API project's `baseURL` must be `API_URL`. On the page, assert what the customer sees with role-based locators. No page objects yet.
+**Rule:** Assert the HTTP status. On every HTTP 400, assert the exact documented `rule`; a 400 with the wrong `rule` fails the test. Assert meaningful values, not only that a property exists. Validate a response body with `expectSchema` from `tests/helpers/schema.ts`. It reads `GET /openapi.json` through the request fixture, so the API project's `baseURL` must be `API_URL`. On the page, assert what the customer sees. For `@e2e` browser flows, use page objects from `tests/pages/` for locators and actions; keep assertions in the spec. See `.cursor/rules/page-objects.mdc`.
 
 **GOOD:**
 
@@ -111,7 +112,9 @@ const body = await plant.json();
 expect(body.name).toBe('Snake Plant');
 await expectSchema(request, body, 'Plant');
 
-await expect(page.getByRole('article').first().getByRole('heading')).toHaveText('Snake Plant');
+const browse = new BrowsePage(page);
+await browse.goto();
+await expect(browse.firstProductHeading).toHaveText('Snake Plant');
 ```
 
 **BAD:**
@@ -135,7 +138,8 @@ test('GET /api/plants', { tag: '@api' }, async ({ request }) => {
 });
 
 test('choosing Price: high to low shows the most expensive plant first', { tag: '@e2e' }, async ({ page }) => {
-  await page.getByRole('combobox', { name: 'Sort by' }).selectOption({ label: 'Price: high to low' });
+  const browse = new BrowsePage(page);
+  await browse.sortByPriceHighToLow();
 });
 ```
 
