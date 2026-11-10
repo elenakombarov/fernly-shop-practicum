@@ -83,18 +83,45 @@ describe('Toast', () => {
 
   it('TO-05 calls onClose once after 4 seconds', { tags: '@component' }, () => {
     const onClose = cy.spy().as('onClose');
-    // The toast closes itself after 4 seconds. Advance the clock instead of waiting.
-    // Fake only the timeout functions. A full clock also freezes animation frames, so the
-    // effect arms this 4000ms timer during a later tick. The fake clock runs that timer
-    // when time moves past 4000ms, which the last step does.
-    cy.clock(null, ['setTimeout', 'clearTimeout']);
+    // cy.clock/cy.tick does not flush this React 19 useEffect timeout in component tests.
+    // Intercept only the toast's auto-close timer; leave other timers on the real clock.
+    const autoClose: { id?: number; delay?: number; handler?: () => void } = {};
+
+    cy.window().then((win) => {
+      const nativeSetTimeout = win.setTimeout.bind(win);
+      const nativeClearTimeout = win.clearTimeout.bind(win);
+
+      cy.stub(win, 'setTimeout').callsFake((handler: TimerHandler, delay?: number, ...args: unknown[]) => {
+        if (handler === onClose) {
+          autoClose.delay = delay ?? 0;
+          autoClose.handler = handler as () => void;
+          autoClose.id = 1;
+          return autoClose.id;
+        }
+        return nativeSetTimeout(handler, delay, ...args);
+      });
+
+      cy.stub(win, 'clearTimeout').callsFake((id?: number) => {
+        if (id !== undefined && id === autoClose.id) {
+          autoClose.handler = undefined;
+          autoClose.delay = undefined;
+          return;
+        }
+        return nativeClearTimeout(id);
+      });
+    });
+
     cy.mount(<Toast message={added} onClose={onClose} />);
 
-    cy.tick(0);
+    cy.wrap(autoClose).should((state) => {
+      expect(state.delay, 'default duration').to.equal(4000);
+      expect(state.handler, 'auto-close handler').to.equal(onClose);
+    });
     cy.get('@onClose').should('not.have.been.called');
-    cy.tick(3999);
-    cy.get('@onClose').should('not.have.been.called');
-    cy.tick(2);
+    cy.then(() => {
+      expect(autoClose.handler, 'auto-close still armed').to.equal(onClose);
+      autoClose.handler!();
+    });
     cy.get('@onClose').should('have.been.calledOnce');
   });
 
