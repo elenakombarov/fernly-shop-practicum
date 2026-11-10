@@ -1,0 +1,183 @@
+---
+description: How we test Fernly — docs/PRODUCT.md and /openapi.json are the oracle, black-box only, own data per test, positive/negative/error per endpoint, schema checks, one tag, evidence labels.
+globs: tests/**
+alwaysApply: false
+---
+
+# Fernly API and end-to-end testing
+
+`docs/PRODUCT.md` and `GET /openapi.json` are the oracle. Tests live in `tests/`. The app code is `web/src` and `api/src`.
+
+## 1. Oracle
+
+**Rule:** Assert the documented requirement. If the app disagrees, keep the assertion, report the discrepancy, and do not weaken the test. When neither document says what should happen, write the question down. Do not assert an assumption until a human confirms it.
+
+**GOOD:** `docs/PRODUCT.md` says Price: high to low shows the most expensive plant first. `GET /openapi.json` names that sort `price-desc`.
+
+```typescript
+const sorted = await request.get('/api/plants?sort=price-desc');
+expect(sorted.status()).toBe(200);
+const first = (await sorted.json()).items[0];
+expect(first.price).toBe(mostExpensive);
+```
+
+**BAD:** The first plant was the cheapest, so the test was changed to expect the lowest price. A catalog order read from `api/src` was also asserted as the featured order, which neither document requires.
+
+## 2. Black-box testing
+
+**Rule:** Design tests only from documented behavior. Never read, inspect, or modify `web/src` or `api/src`. Do not infer implementation details.
+
+**GOOD:** `GET /api/plants/{plantId}` is documented to return a plant, so the body is checked against the `Plant` schema.
+
+```typescript
+const plant = await request.get(`/api/plants/${plantId}`);
+expect(plant.status()).toBe(200);
+await expectSchema(request, await plant.json(), 'Plant');
+```
+
+**BAD:** `api/src/store.ts` was opened to copy how ids are built, then the test required that internal format.
+
+## 3. Requests
+
+**Rule:** Call the API with Playwright's `request` fixture and a path relative to `baseURL`. The API host comes from `API_URL`. Browser tests open paths on `WEB_URL`. Never hard-code `http://localhost:8100` or `http://localhost:5173` in a test file.
+
+**GOOD:**
+
+```typescript
+const response = await request.get('/api/plants');
+expect(response.status()).toBe(200);
+
+const browse = new BrowsePage(page);
+await browse.goto();
+await browse.sortByPriceHighToLow();
+```
+
+**BAD:**
+
+```typescript
+const response = await request.get('http://localhost:8100/api/plants');
+await page.goto('http://localhost:5173/');
+```
+
+## 4. Test data
+
+**Rule:** Each test creates the data it needs. Sign in with `FERNLY_USER_EMAIL` and `FERNLY_USER_PASSWORD` from the environment (the seed customers in `.env.example`, not real accounts). Do not call `POST /api/admin/reset` in a regular test, and do not use rows created by another test. `tests/reset.setup.ts` resets once per run. The catalog of 21 plants is that restored seed.
+
+**GOOD:**
+
+```typescript
+const email = process.env.FERNLY_USER_EMAIL;
+const password = process.env.FERNLY_USER_PASSWORD;
+const signedIn = await request.post('/api/auth/login', { data: { email, password } });
+expect(signedIn.status()).toBe(200);
+```
+
+**BAD:**
+
+```typescript
+await request.post('/api/admin/reset');
+const orders = await request.get('/api/orders');
+expect((await orders.json())[0].id).toBe('ord-from-another-test');
+```
+
+## 5. Endpoint coverage
+
+**Rule:** For each endpoint, cover a positive success, one invalid input at a time (HTTP 400 and the documented `rule`), and HTTP 404 for an unknown id where the docs list 404. Do not invent unsupported error scenarios.
+
+**GOOD:** `GET /api/plants` documents 200 and 400. `GET /api/plants/{plantId}` documents 200 and 404.
+
+```typescript
+const listed = await request.get('/api/plants');
+expect(listed.status()).toBe(200);
+
+const invalid = await request.get('/api/plants?sort=not-a-sort');
+expect(invalid.status()).toBe(400);
+expect((await invalid.json()).rule).toBe('validation_error');
+
+const missing = await request.get('/api/plants/pl-does-not-exist');
+expect(missing.status()).toBe(404);
+```
+
+**BAD:** One `GET /api/plants` sends an unknown sort and a page of `0` together, then expects HTTP 500. `GET /api/health` is also expected to return 404.
+
+## 6. Assertions
+
+**Rule:** Assert the HTTP status. On every HTTP 400, assert the exact documented `rule`; a 400 with the wrong `rule` fails the test. Assert meaningful values, not only that a property exists. Validate a response body with `expectSchema` from `tests/helpers/schema.ts`. It reads `GET /openapi.json` through the request fixture, so the API project's `baseURL` must be `API_URL`. On the page, assert what the customer sees. For `@e2e` browser flows, use page objects from `tests/pages/` for locators and actions; keep assertions in the spec. See `.cursor/rules/page-objects.mdc`.
+
+**GOOD:**
+
+```typescript
+expect(plant.status()).toBe(200);
+const body = await plant.json();
+expect(body.name).toBe('Snake Plant');
+await expectSchema(request, body, 'Plant');
+
+const browse = new BrowsePage(page);
+await browse.goto();
+await expect(browse.firstProductHeading).toHaveText('Snake Plant');
+```
+
+**BAD:**
+
+```typescript
+expect(plant.status()).toBe(200);
+expect(body).toHaveProperty('name');
+await expect(page.locator('.card h3')).toHaveText('Snake Plant');
+```
+
+## 7. Tags
+
+**Rule:** Every test has exactly one tag on `test()`: `@api` for a single endpoint, `@e2e` for an end-to-end workflow in the browser. Use `{ tag: '@api' }`. Never tag `test.describe()`. The reset setup is not one of these tests.
+
+**GOOD:**
+
+```typescript
+test('GET /api/plants', { tag: '@api' }, async ({ request }) => {
+  const response = await request.get('/api/plants');
+  expect(response.status()).toBe(200);
+});
+
+test('choosing Price: high to low shows the most expensive plant first', { tag: '@e2e' }, async ({ page }) => {
+  const browse = new BrowsePage(page);
+  await browse.sortByPriceHighToLow();
+});
+```
+
+**BAD:**
+
+```typescript
+test.describe('plants', { tag: '@api' }, () => {
+  test('browse and sort', { tag: ['@api', '@e2e'] }, async ({ page }) => {
+    await page.goto('/');
+  });
+});
+```
+
+## 8. Known bugs
+
+**Rule:** Keep a confirmed bug's test and its original assertions. Mark it with `test.fail(true, 'BUG-<n>: <one line>')`. Do not delete, skip, or weaken a test to hide a bug. Do not mark a bug confirmed without evidence.
+
+**GOOD:** Use this only after the failure is confirmed.
+
+```typescript
+test('price-desc returns the most expensive plant first', { tag: '@api' }, async ({ request }) => {
+  test.fail(true, 'BUG-1: price-desc returns the cheapest plant first');
+  const sorted = await request.get('/api/plants?sort=price-desc');
+  expect((await sorted.json()).items[0].price).toBe(mostExpensive);
+});
+```
+
+**BAD:**
+
+```typescript
+test.skip(true, 'price sort is flaky');
+expect(first.price).toBe(cheapest);
+```
+
+## 9. Evidence
+
+**Rule:** Label every claim `executed`, `inspected only`, or `not yet tested`. A planned or inspected-only check is not a successful run.
+
+**GOOD:** `executed`: `GET /api/plants?sort=price-desc` returned HTTP 200 in this run, and the first price was not the catalog maximum. `inspected only`: `docs/PRODUCT.md` says an unknown order is "Order not found"; that page was not opened.
+
+**BAD:** `GET /api/plants/pl-does-not-exist` returns 404, written as a result after reading `/openapi.json` and not sending the request.

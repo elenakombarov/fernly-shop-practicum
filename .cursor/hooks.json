@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "command": ".cursor/hooks/guard-test-assertions.cmd",
+        "matcher": "Write",
+        "failClosed": true
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": ".cursor/hooks/guard-test-assertions.cmd",
+        "matcher": "Write",
+        "failClosed": true
+      },
+      {
+        "command": ".cursor/hooks/guard-constitution.cmd",
+        "matcher": "Write",
+        "failClosed": true
+      }
+    ]
+  }
+}
