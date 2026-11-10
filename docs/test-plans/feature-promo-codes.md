@@ -1,3 +1,5 @@
+Approved.
+
 # Test plan: feature-promo-codes
 
 Source: `git diff origin/<base>...HEAD` (from `untrusted.diff`)
