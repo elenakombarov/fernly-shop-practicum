@@ -8,8 +8,8 @@ Component exit: 1
 
 It looks like this is your first time using Cypress: 16.2.1
 
-[33m[STARTED][39m [2m[01:16:49][22m  Verifying Cypress can run /home/runner/.cache/Cypress/16.2.1/Cypress
-[32m[COMPLETED][39m [2m[01:16:50][22m  Verified Cypress!       /home/runner/.cache/Cypress/16.2.1/Cypress
+[33m[STARTED][39m [2m[18:52:46][22m  Verifying Cypress can run /home/runner/.cache/Cypress/16.2.1/Cypress
+[32m[COMPLETED][39m [2m[18:52:48][22m  Verified Cypress!       /home/runner/.cache/Cypress/16.2.1/Cypress
 
 Opening Cypress...
 @cypress/grep: filtering using tag(s) "-@known-bug"
@@ -42,14 +42,14 @@ Opening Cypress...
 
 [0m[0m
 [0m  CareLevelBadge[0m
-  [32m  ✓[0m[90m CB-01 shows Easy care with one filled dot[0m[90m (86ms)[0m
-  [32m  ✓[0m[90m CB-02 shows Moderate care with two filled dots[0m[90m (42ms)[0m
+  [32m  ✓[0m[90m CB-01 shows Easy care with one filled dot[0m[90m (51ms)[0m
+  [32m  ✓[0m[90m CB-02 shows Moderate care with two filled dots[0m[90m (32ms)[0m
   [36m  - CB-03 shows Expert care with three filled dots[0m
-  [32m  ✓[0m[90m CB-04 announces Easy care and hides the dot[0m[90m (43ms)[0m
-  [32m  ✓[0m[90m CB-05 titles the badge How much care this plant needs[0m[90m (41ms)[0m
+  [32m  ✓[0m[90m CB-04 announces Easy care and hides the dot[0m[90m (37ms)[0m
+  [32m  ✓[0m[90m CB-05 titles the badge How much care this plant needs[0m[90m (35ms)[0m
 
 
-[92m [0m[32m 4 passing[0m[90m (236ms)[0m
+[92m [0m[32m 4 passing[0m[90m (174ms)[0m
 [36m [0m[36m 1 pending[0m
 
 
@@ -74,17 +74,17 @@ Opening Cypress...
 
 [0m[0m
 [0m  CartLine[0m
-  [32m  ✓[0m[90m LN-01 shows Aloe Vera and Size S[0m[90m (108ms)[0m
-  [32m  ✓[0m[90m LN-02 names the unit price Price each and the line total Line total[0m[90m (41ms)[0m
-  [32m  ✓[0m[90m LN-03 names the quantity Quantity of Aloe Vera and shows 1[0m[90m (48ms)[0m
-  [32m  ✓[0m[90m LN-04 calls onQuantityChange with the line id and the next quantity[0m[90m (132ms)[0m
-  [32m  ✓[0m[90m LN-05 calls onRemove with the line id[0m[90m (110ms)[0m
-  [32m  ✓[0m[90m LN-06 leaves Remove enabled when busy is omitted[0m[90m (36ms)[0m
-  [32m  ✓[0m[90m LN-07 disables the quantity buttons and Remove while the line is busy[0m[90m (47ms)[0m
-  [32m  ✓[0m[90m LN-08 names Remove and removes the line with Enter[0m[90m (50ms)[0m
+  [32m  ✓[0m[90m LN-01 shows Aloe Vera and Size S[0m[90m (88ms)[0m
+  [32m  ✓[0m[90m LN-02 names the unit price Price each and the line total Line total[0m[90m (37ms)[0m
+  [32m  ✓[0m[90m LN-03 names the quantity Quantity of Aloe Vera and shows 1[0m[90m (45ms)[0m
+  [32m  ✓[0m[90m LN-04 calls onQuantityChange with the line id and the next quantity[0m[90m (116ms)[0m
+  [32m  ✓[0m[90m LN-05 calls onRemove with the line id[0m[90m (101ms)[0m
+  [32m  ✓[0m[90m LN-06 leaves Remove enabled when busy is omitted[0m[90m (33ms)[0m
+  [32m  ✓[0m[90m LN-07 disables the quantity buttons and Remove while the line is busy[0m[90m (38ms)[0m
+  [32m  ✓[0m[90m LN-08 names Remove and removes the line with Enter[0m[90m (39ms)[0m
 
 
-[92m [0m[32m 8 passing[0m[90m (643ms)[0m
+[92m [0m[32m 8 passing[0m[90m (546ms)[0m
 
 
 [32m  ([4m[1mResults[22m[24m)[39m
@@ -108,15 +108,15 @@ Opening Cypress...
 
 [0m[0m
 [0m  EmptyState[0m
-  [32m  ✓[0m[90m ES-01 shows the title as a heading[0m[90m (87ms)[0m
-  [32m  ✓[0m[90m ES-02 shows the message[0m[90m (38ms)[0m
-  [32m  ✓[0m[90m ES-03 hides the message when it is omitted[0m[90m (40ms)[0m
-  [32m  ✓[0m[90m ES-04 shows the Browse plants link[0m[90m (36ms)[0m
-  [32m  ✓[0m[90m ES-05 hides the link when the action is omitted[0m[90m (42ms)[0m
-  [32m  ✓[0m[90m ES-06 hides the plant mark from assistive tech[0m[90m (36ms)[0m
+  [32m  ✓[0m[90m ES-01 shows the title as a heading[0m[90m (72ms)[0m
+  [32m  ✓[0m[90m ES-02 shows the message[0m[90m (35ms)[0m
+  [32m  ✓[0m[90m ES-03 hides the message when it is omitted[0m[90m (36ms)[0m
+  [32m  ✓[0m[90m ES-04 shows the Browse plants link[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m ES-05 hides the link when the action is omitted[0m[90m (33ms)[0m
+  [32m  ✓[0m[90m ES-06 hides the plant mark from assistive tech[0m[90m (30ms)[0m
 
 
-[92m [0m[32m 6 passing[0m[90m (315ms)[0m
+[92m [0m[32m 6 passing[0m[90m (258ms)[0m
 
 
 [32m  ([4m[1mResults[22m[24m)[39m
@@ -140,14 +140,14 @@ Opening Cypress...
 
 [0m[0m
 [0m  ErrorBanner[0m
-  [32m  ✓[0m[90m EB-01 shows the message as an alert[0m[90m (87ms)[0m
-  [32m  ✓[0m[90m EB-02 shows Try again when onRetry is set[0m[90m (37ms)[0m
-  [32m  ✓[0m[90m EB-03 calls onRetry once[0m[90m (129ms)[0m
-  [32m  ✓[0m[90m EB-04 shows the message and no button when onRetry is omitted[0m[90m (39ms)[0m
-  [32m  ✓[0m[90m EB-05 keeps focus visible and retries with Enter[0m[90m (52ms)[0m
+  [32m  ✓[0m[90m EB-01 shows the message as an alert[0m[90m (65ms)[0m
+  [32m  ✓[0m[90m EB-02 shows Try again when onRetry is set[0m[90m (33ms)[0m
+  [32m  ✓[0m[90m EB-03 calls onRetry once[0m[90m (116ms)[0m
+  [32m  ✓[0m[90m EB-04 shows the message and no button when onRetry is omitted[0m[90m (33ms)[0m
+  [32m  ✓[0m[90m EB-05 keeps focus visible and retries with Enter[0m[90m (46ms)[0m
 
 
-[92m [0m[32m 5 passing[0m[90m (381ms)[0m
+[92m [0m[32m 5 passing[0m[90m (325ms)[0m
 
 
 [32m  ([4m[1mResults[22m[24m)[39m
@@ -171,22 +171,22 @@ Opening Cypress...
 
 [0m[0m
 [0m  LightFilter[0m
-  [32m  ✓[0m[90m LF-01 shows Light with every box unchecked and does not call onChange[0m[90m (107ms)[0m
-  [32m  ✓[0m[90m LF-02 checks only Low light[0m[90m (53ms)[0m
-  [32m  ✓[0m[90m LF-03 checks only Medium light[0m[90m (49ms)[0m
-  [32m  ✓[0m[90m LF-04 checks only Bright light[0m[90m (46ms)[0m
-  [32m  ✓[0m[90m LF-05 checks Low light and Bright light together[0m[90m (45ms)[0m
-  [32m  ✓[0m[90m LF-06 checks Bright light and Low light when the list is reversed[0m[90m (45ms)[0m
-  [32m  ✓[0m[90m LF-07 checks all three lights[0m[90m (41ms)[0m
-  [32m  ✓[0m[90m LF-08 calls onChange with low when Low light is clicked[0m[90m (125ms)[0m
-  [32m  ✓[0m[90m LF-09 calls onChange with low and bright when Bright light is clicked[0m[90m (113ms)[0m
-  [32m  ✓[0m[90m LF-10 calls onChange with bright when Low light is removed[0m[90m (111ms)[0m
-  [32m  ✓[0m[90m LF-11 calls onChange with an empty list when the last light is removed[0m[90m (110ms)[0m
-  [32m  ✓[0m[90m LF-12 calls onChange with low and bright when Medium light is removed[0m[90m (112ms)[0m
-  [32m  ✓[0m[90m LF-13 shows the lights the parent replaces and does not call onChange[0m[90m (120ms)[0m
-  [32m  ✓[0m[90m LF-14 names the group Light and names each checkbox[0m[90m (44ms)[0m
-  [32m  ✓[0m[90m LF-15 keeps focus visible and selects Bright light from the keyboard[0m[90m (71ms)[0m
-  [32m  ✓[0m[90m LF-16 keeps the legend and options at a 4.5 to 1 contrast[0m[90m (38ms)[0m
+  [32m  ✓[0m[90m LF-01 shows Light with every box unchecked and does not call onChange[0m[90m (73ms)[0m
+  [32m  ✓[0m[90m LF-02 checks only Low light[0m[90m (36ms)[0m
+  [32m  ✓[0m[90m LF-03 checks only Medium light[0m[90m (39ms)[0m
+  [32m  ✓[0m[90m LF-04 checks only Bright light[0m[90m (31ms)[0m
+  [32m  ✓[0m[90m LF-05 checks Low light and Bright light together[0m[90m (33ms)[0m
+  [32m  ✓[0m[90m LF-06 checks Bright light and Low light when the list is reversed[0m[90m (36ms)[0m
+  [32m  ✓[0m[90m LF-07 checks all three lights[0m[90m (33ms)[0m
+  [32m  ✓[0m[90m LF-08 calls onChange with low when Low light is clicked[0m[90m (111ms)[0m
+  [32m  ✓[0m[90m LF-09 calls onChange with low and bright when Bright light is clicked[0m[90m (100ms)[0m
+  [32m  ✓[0m[90m LF-10 calls onChange with bright when Low light is removed[0m[90m (100ms)[0m
+  [32m  ✓[0m[90m LF-11 calls onChange with an empty list when the last light is removed[0m[90m (101ms)[0m
+  [32m  ✓[0m[90m LF-12 calls onChange with low and bright when Medium light is removed[0m[90m (97ms)[0m
+  [32m  ✓[0m[90m LF-13 shows the lights the parent replaces and does not call onChange[0m[90m (110ms)[0m
+  [32m  ✓[0m[90m LF-14 names the group Light and names each checkbox[0m[90m (34ms)[0m
+  [32m  ✓[0m[90m LF-15 keeps focus visible and selects Bright light from the keyboard[0m[90m (38ms)[0m
+  [32m  ✓[0m[90m LF-16 keeps the legend and options at a 4.5 to 1 contrast[0m[90m (31ms)[0m
 
 
 [92m [0m[32m 16 passing[0m[90m (1s)[0m
@@ -213,17 +213,17 @@ Opening Cypress...
 
 [0m[0m
 [0m  OrderSummary[0m
-  [32m  ✓[0m[90m OS-01 names the region Order summary[0m[90m (96ms)[0m
-  [32m  ✓[0m[90m OS-02 shows the heading Paid[0m[90m (38ms)[0m
-  [32m  ✓[0m[90m OS-03 reads Subtotal (1 item)[0m[90m (34ms)[0m
-  [32m  ✓[0m[90m OS-04 reads Subtotal (2 items)[0m[90m (35ms)[0m
-  [32m  ✓[0m[90m OS-05 shows shipping $6.95 and total $16.94[0m[90m (42ms)[0m
-  [32m  ✓[0m[90m OS-06 says Free and hides the free-shipping hint at $50[0m[90m (39ms)[0m
-  [32m  ✓[0m[90m OS-07 shows how much more would make shipping free[0m[90m (30ms)[0m
-  [32m  ✓[0m[90m OS-08 shows a shipping price and no hint when the cart is empty[0m[90m (35ms)[0m
+  [32m  ✓[0m[90m OS-01 names the region Order summary[0m[90m (58ms)[0m
+  [32m  ✓[0m[90m OS-02 shows the heading Paid[0m[90m (29ms)[0m
+  [32m  ✓[0m[90m OS-03 reads Subtotal (1 item)[0m[90m (27ms)[0m
+  [32m  ✓[0m[90m OS-04 reads Subtotal (2 items)[0m[90m (28ms)[0m
+  [32m  ✓[0m[90m OS-05 shows shipping $6.95 and total $16.94[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m OS-06 says Free and hides the free-shipping hint at $50[0m[90m (29ms)[0m
+  [32m  ✓[0m[90m OS-07 shows how much more would make shipping free[0m[90m (25ms)[0m
+  [32m  ✓[0m[90m OS-08 shows a shipping price and no hint when the cart is empty[0m[90m (29ms)[0m
 
 
-[92m [0m[32m 8 passing[0m[90m (388ms)[0m
+[92m [0m[32m 8 passing[0m[90m (284ms)[0m
 
 
 [32m  ([4m[1mResults[22m[24m)[39m
@@ -247,14 +247,14 @@ Opening Cypress...
 
 [0m[0m
 [0m  PetSafeTag[0m
-  [32m  ✓[0m[90m PS-01 shows Pet safe[0m[90m (81ms)[0m
-  [32m  ✓[0m[90m PS-02 shows Not pet safe[0m[90m (36ms)[0m
-  [32m  ✓[0m[90m PS-03 announces Pet safe and hides the paw[0m[90m (43ms)[0m
-  [32m  ✓[0m[90m PS-04 announces Not pet safe and hides the warning mark[0m[90m (41ms)[0m
-  [32m  ✓[0m[90m PS-05 keeps Not pet safe at a 4.5 to 1 contrast[0m[90m (40ms)[0m
+  [32m  ✓[0m[90m PS-01 shows Pet safe[0m[90m (53ms)[0m
+  [32m  ✓[0m[90m PS-02 shows Not pet safe[0m[90m (28ms)[0m
+  [32m  ✓[0m[90m PS-03 announces Pet safe and hides the paw[0m[90m (32ms)[0m
+  [32m  ✓[0m[90m PS-04 announces Not pet safe and hides the warning mark[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m PS-05 keeps Not pet safe at a 4.5 to 1 contrast[0m[90m (28ms)[0m
 
 
-[92m [0m[32m 5 passing[0m[90m (269ms)[0m
+[92m [0m[32m 5 passing[0m[90m (187ms)[0m
 
 
 [32m  ([4m[1mResults[22m[24m)[39m
@@ -278,27 +278,27 @@ Opening Cypress...
 
 [0m[0m
 [0m  PlantCard[0m
-  [32m  ✓[0m[90m PC-01 shows Snake Plant as a heading linking to the plant[0m[90m (124ms)[0m
-  [32m  ✓[0m[90m PC-02 shows the Latin name[0m[90m (42ms)[0m
-  [32m  ✓[0m[90m PC-03 shows the photo and links it to the plant[0m[90m (63ms)[0m
+  [32m  ✓[0m[90m PC-01 shows Snake Plant as a heading linking to the plant[0m[90m (83ms)[0m
+  [32m  ✓[0m[90m PC-02 shows the Latin name[0m[90m (34ms)[0m
+  [32m  ✓[0m[90m PC-03 shows the photo and links it to the plant[0m[90m (29ms)[0m
   [36m  - PC-04 shows $22.00[0m
-  [32m  ✓[0m[90m PC-05 shows the rating 4.8[0m[90m (44ms)[0m
-  [32m  ✓[0m[90m PC-06 shows Out of stock while the name still links and the save button stays[0m[90m (47ms)[0m
-  [32m  ✓[0m[90m PC-07 shows no Out of stock ribbon at stock 1[0m[90m (22ms)[0m
-  [32m  ✓[0m[90m PC-08 hides the save button when onToggleSave is omitted[0m[90m (18ms)[0m
-  [32m  ✓[0m[90m PC-09 shows an unpressed save button and does not call onToggleSave[0m[90m (46ms)[0m
-  [32m  ✓[0m[90m PC-10 shows a pressed save button when saved[0m[90m (37ms)[0m
-  [32m  ✓[0m[90m PC-11 shows the pressed state the parent sets without calling onToggleSave[0m[90m (132ms)[0m
-  [32m  ✓[0m[90m PC-12 calls onToggleSave with the plant id and stays unpressed[0m[90m (118ms)[0m
-  [32m  ✓[0m[90m PC-13 calls onToggleSave with the plant id and stays pressed[0m[90m (116ms)[0m
-  [32m  ✓[0m[90m PC-14 gives the photo alternative text[0m[90m (37ms)[0m
+  [32m  ✓[0m[90m PC-05 shows the rating 4.8[0m[90m (28ms)[0m
+  [32m  ✓[0m[90m PC-06 shows Out of stock while the name still links and the save button stays[0m[90m (32ms)[0m
+  [32m  ✓[0m[90m PC-07 shows no Out of stock ribbon at stock 1[0m[90m (13ms)[0m
+  [32m  ✓[0m[90m PC-08 hides the save button when onToggleSave is omitted[0m[90m (13ms)[0m
+  [32m  ✓[0m[90m PC-09 shows an unpressed save button and does not call onToggleSave[0m[90m (35ms)[0m
+  [32m  ✓[0m[90m PC-10 shows a pressed save button when saved[0m[90m (28ms)[0m
+  [32m  ✓[0m[90m PC-11 shows the pressed state the parent sets without calling onToggleSave[0m[90m (114ms)[0m
+  [32m  ✓[0m[90m PC-12 calls onToggleSave with the plant id and stays unpressed[0m[90m (103ms)[0m
+  [32m  ✓[0m[90m PC-13 calls onToggleSave with the plant id and stays pressed[0m[90m (103ms)[0m
+  [32m  ✓[0m[90m PC-14 gives the photo alternative text[0m[90m (27ms)[0m
   [36m  - PC-15 gives the save button a name and does not announce the heart[0m
-  [32m  ✓[0m[90m PC-16 reads the rating as 4.8 out of 5 and hides the star[0m[90m (39ms)[0m
-  [32m  ✓[0m[90m PC-17 keeps focus visible and saves the plant from the keyboard[0m[90m (75ms)[0m
-  [32m  ✓[0m[90m PC-18 keeps the name at a 4.5 to 1 contrast on white[0m[90m (35ms)[0m
+  [32m  ✓[0m[90m PC-16 reads the rating as 4.8 out of 5 and hides the star[0m[90m (27ms)[0m
+  [32m  ✓[0m[90m PC-17 keeps focus visible and saves the plant from the keyboard[0m[90m (51ms)[0m
+  [32m  ✓[0m[90m PC-18 keeps the name at a 4.5 to 1 contrast on white[0m[90m (28ms)[0m
 
 
-[92m [0m[32m 16 passing[0m[90m (1s)[0m
+[92m [0m[32m 16 passing[0m[90m (841ms)[0m
 [36m [0m[36m 2 pending[0m
 
 
@@ -312,7 +312,7 @@ Opening Cypress...
 [90m  │[39m [90mSkipped:[39m      [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mScreenshots:[39m  [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mVideo:[39m        [32mfalse[39m                                                                            [90m│[39m
-[90m  │[39m [90mDuration:[39m     [32m1 second[39m                                                                         [90m│[39m
+[90m  │[39m [90mDuration:[39m     [32m0 seconds[39m                                                                        [90m│[39m
 [90m  │[39m [90mSpec Ran:[39m     [32m[32mPlantCard.cy.tsx[32m[39m                                                                 [90m│[39m
 [90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
 
@@ -325,20 +325,20 @@ Opening Cypress...
 [0m  PriceTag[0m
   [36m  - PT-01 shows $12.50 for an amount with one decimal place[0m
   [36m  - PT-02 shows $22.00 for whole dollars[0m
-  [32m  ✓[0m[90m PT-03 shows $9.99 when the amount already has two decimals[0m[90m (86ms)[0m
+  [32m  ✓[0m[90m PT-03 shows $9.99 when the amount already has two decimals[0m[90m (59ms)[0m
   [36m  - PT-04 shows $0.00 for a zero amount[0m
   [36m  - PT-05 shows $1.00 for one dollar[0m
-  [32m  ✓[0m[90m PT-06 shows $0.01 for one cent[0m[90m (44ms)[0m
-  [32m  ✓[0m[90m PT-16 shows $0.99 for one cent under a dollar[0m[90m (40ms)[0m
-  [32m  ✓[0m[90m PT-09 uses a 1.05rem font when size is omitted or md[0m[90m (52ms)[0m
-  [32m  ✓[0m[90m PT-10 uses a 0.9rem font for the small size[0m[90m (38ms)[0m
-  [32m  ✓[0m[90m PT-11 uses a 1.6rem font for the large size[0m[90m (39ms)[0m
-  [32m  ✓[0m[90m PT-12 shows $9.99 with no prefix when label is omitted[0m[90m (35ms)[0m
-  [32m  ✓[0m[90m PT-13 hides the label and reads Price: before the price[0m[90m (40ms)[0m
+  [32m  ✓[0m[90m PT-06 shows $0.01 for one cent[0m[90m (33ms)[0m
+  [32m  ✓[0m[90m PT-16 shows $0.99 for one cent under a dollar[0m[90m (32ms)[0m
+  [32m  ✓[0m[90m PT-09 uses a 1.05rem font when size is omitted or md[0m[90m (37ms)[0m
+  [32m  ✓[0m[90m PT-10 uses a 0.9rem font for the small size[0m[90m (26ms)[0m
+  [32m  ✓[0m[90m PT-11 uses a 1.6rem font for the large size[0m[90m (28ms)[0m
+  [32m  ✓[0m[90m PT-12 shows $9.99 with no prefix when label is omitted[0m[90m (29ms)[0m
+  [32m  ✓[0m[90m PT-13 hides the label and reads Price: before the price[0m[90m (29ms)[0m
   [36m  - PT-14 keeps the price at a 4.5:1 contrast on the shop background[0m
 
 
-[92m [0m[32m 8 passing[0m[90m (423ms)[0m
+[92m [0m[32m 8 passing[0m[90m (301ms)[0m
 [36m [0m[36m 5 pending[0m
 
 
@@ -363,12 +363,12 @@ Opening Cypress...
 
 [0m[0m
 [0m  QuantityStepper[0m
-  [32m  ✓[0m[90m calls onChange with the new value when + or − is clicked[0m[33m (268ms)[0m
-  [32m  ✓[0m[90m disables − at the minimum[0m[90m (38ms)[0m
+  [32m  ✓[0m[90m calls onChange with the new value when + or − is clicked[0m[90m (218ms)[0m
+  [32m  ✓[0m[90m disables − at the minimum[0m[90m (31ms)[0m
   [36m  - disables + at the stock limit[0m
 
 
-[92m [0m[32m 2 passing[0m[90m (334ms)[0m
+[92m [0m[32m 2 passing[0m[90m (271ms)[0m
 [36m [0m[36m 1 pending[0m
 
 
@@ -393,24 +393,24 @@ Opening Cypress...
 
 [0m[0m
 [0m  SearchBox[0m
-  [32m  ✓[0m[90m SB-01 shows the hint and Search when the field is empty[0m[90m (114ms)[0m
-  [32m  ✓[0m[90m SB-02 shows the search term and Clear search[0m[90m (49ms)[0m
-  [32m  ✓[0m[90m SB-03 shows Clear search for one character[0m[90m (49ms)[0m
-  [32m  ✓[0m[90m SB-04 shows Clear search for a single space[0m[90m (46ms)[0m
-  [32m  ✓[0m[90m SB-05 calls onSearch once with the typed text[0m[33m (278ms)[0m
-  [32m  ✓[0m[90m SB-06 trims spaces around the search[0m[90m (243ms)[0m
-  [32m  ✓[0m[90m SB-07 searches for nothing when the text is only spaces[0m[90m (114ms)[0m
-  [32m  ✓[0m[90m SB-08 searches for nothing when the field is empty[0m[90m (106ms)[0m
-  [32m  ✓[0m[90m SB-09 keeps the typed letter case[0m[90m (106ms)[0m
-  [32m  ✓[0m[90m SB-10 clears the search and calls onSearch with an empty string[0m[90m (114ms)[0m
-  [32m  ✓[0m[90m SB-11 shows the search the parent replaces[0m[90m (111ms)[0m
-  [32m  ✓[0m[90m SB-14 is a search landmark with a Search button and a hidden magnifier[0m[90m (41ms)[0m
-  [32m  ✓[0m[90m SB-15 names the clear control Clear search[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m SB-01 shows the hint and Search when the field is empty[0m[90m (78ms)[0m
+  [32m  ✓[0m[90m SB-02 shows the search term and Clear search[0m[90m (37ms)[0m
+  [32m  ✓[0m[90m SB-03 shows Clear search for one character[0m[90m (34ms)[0m
+  [32m  ✓[0m[90m SB-04 shows Clear search for a single space[0m[90m (31ms)[0m
+  [32m  ✓[0m[90m SB-05 calls onSearch once with the typed text[0m[90m (245ms)[0m
+  [32m  ✓[0m[90m SB-06 trims spaces around the search[0m[90m (229ms)[0m
+  [32m  ✓[0m[90m SB-07 searches for nothing when the text is only spaces[0m[90m (103ms)[0m
+  [32m  ✓[0m[90m SB-08 searches for nothing when the field is empty[0m[90m (98ms)[0m
+  [32m  ✓[0m[90m SB-09 keeps the typed letter case[0m[90m (102ms)[0m
+  [32m  ✓[0m[90m SB-10 clears the search and calls onSearch with an empty string[0m[90m (105ms)[0m
+  [32m  ✓[0m[90m SB-11 shows the search the parent replaces[0m[90m (103ms)[0m
+  [32m  ✓[0m[90m SB-14 is a search landmark with a Search button and a hidden magnifier[0m[90m (28ms)[0m
+  [32m  ✓[0m[90m SB-15 names the clear control Clear search[0m[90m (25ms)[0m
   [36m  - SB-16 gives the search field a name[0m
   [36m  - SB-18 submits with Enter and keeps focus visible[0m
-  [32m  ✓[0m[90m SB-19 keeps Search text at a 4.5 to 1 contrast[0m[90m (38ms)[0m
-  [32m  ✓[0m[90m SB-20 keeps the hint and Clear search at a 4.5 to 1 contrast[0m[90m (164ms)[0m
-  [32m  ✓[0m[90m SB-21 keeps the typed text at a 4.5 to 1 contrast[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m SB-19 keeps Search text at a 4.5 to 1 contrast[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m SB-20 keeps the hint and Clear search at a 4.5 to 1 contrast[0m[90m (155ms)[0m
+  [32m  ✓[0m[90m SB-21 keeps the typed text at a 4.5 to 1 contrast[0m[90m (29ms)[0m
 
 
 [92m [0m[32m 16 passing[0m[90m (2s)[0m
@@ -438,17 +438,17 @@ Opening Cypress...
 
 [0m[0m
 [0m  SizePicker[0m
-  [32m  ✓[0m[90m SZ-01 shows a Size group with Small, Medium, and Large[0m[90m (94ms)[0m
-  [32m  ✓[0m[90m SZ-02 shows Base price for Small[0m[90m (42ms)[0m
+  [32m  ✓[0m[90m SZ-01 shows a Size group with Small, Medium, and Large[0m[90m (66ms)[0m
+  [32m  ✓[0m[90m SZ-02 shows Base price for Small[0m[90m (34ms)[0m
   [36m  - SZ-03 shows +$6.00 for Medium[0m
-  [32m  ✓[0m[90m SZ-04 selects Medium and not Small[0m[90m (45ms)[0m
-  [32m  ✓[0m[90m SZ-05 calls onChange with L and keeps Small selected[0m[90m (131ms)[0m
-  [32m  ✓[0m[90m SZ-06 names each radio size[0m[90m (33ms)[0m
-  [32m  ✓[0m[90m SZ-07 shows only the sizes it is given[0m[90m (42ms)[0m
-  [32m  ✓[0m[90m SZ-08 moves to Medium with Arrow Right and keeps Small selected[0m[90m (38ms)[0m
+  [32m  ✓[0m[90m SZ-04 selects Medium and not Small[0m[90m (35ms)[0m
+  [32m  ✓[0m[90m SZ-05 calls onChange with L and keeps Small selected[0m[90m (113ms)[0m
+  [32m  ✓[0m[90m SZ-06 names each radio size[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m SZ-07 shows only the sizes it is given[0m[90m (34ms)[0m
+  [32m  ✓[0m[90m SZ-08 moves to Medium with Arrow Right and keeps Small selected[0m[90m (25ms)[0m
 
 
-[92m [0m[32m 7 passing[0m[90m (474ms)[0m
+[92m [0m[32m 7 passing[0m[90m (378ms)[0m
 [36m [0m[36m 1 pending[0m
 
 
@@ -473,24 +473,24 @@ Opening Cypress...
 
 [0m[0m
 [0m  SortSelect[0m
-  [32m  ✓[0m[90m SS-01 shows Sort by with Featured selected[0m[90m (89ms)[0m
-  [32m  ✓[0m[90m SS-02 selects Price: low to high[0m[90m (47ms)[0m
-  [32m  ✓[0m[90m SS-03 selects Price: high to low[0m[90m (42ms)[0m
-  [32m  ✓[0m[90m SS-04 selects Name: A to Z[0m[90m (42ms)[0m
-  [32m  ✓[0m[90m SS-05 selects Best rated[0m[90m (36ms)[0m
-  [32m  ✓[0m[90m SS-06 lists the five sorts in order[0m[90m (38ms)[0m
-  [32m  ✓[0m[90m SS-07 calls onChange once with price-asc and keeps Featured selected[0m[90m (187ms)[0m
-  [32m  ✓[0m[90m SS-08 calls onChange once with price-desc and keeps Price: low to high selected[0m[90m (169ms)[0m
-  [32m  ✓[0m[90m SS-09 calls onChange once with name and keeps Price: high to low selected[0m[90m (164ms)[0m
-  [32m  ✓[0m[90m SS-10 calls onChange once with rating and keeps Name: A to Z selected[0m[90m (166ms)[0m
-  [32m  ✓[0m[90m SS-11 calls onChange once with featured and keeps Best rated selected[0m[90m (166ms)[0m
-  [32m  ✓[0m[90m SS-12 shows the sort the parent passes and does not call onChange[0m[90m (124ms)[0m
-  [32m  ✓[0m[90m SS-13 names the select Sort by[0m[90m (32ms)[0m
-  [32m  ✓[0m[90m SS-14 keeps focus visible and chooses Price: high to low from the keyboard[0m[90m (156ms)[0m
-  [32m  ✓[0m[90m SS-15 keeps Sort by and the selected sort at a 4.5 to 1 contrast[0m[90m (37ms)[0m
+  [32m  ✓[0m[90m SS-01 shows Sort by with Featured selected[0m[90m (63ms)[0m
+  [32m  ✓[0m[90m SS-02 selects Price: low to high[0m[90m (36ms)[0m
+  [32m  ✓[0m[90m SS-03 selects Price: high to low[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m SS-04 selects Name: A to Z[0m[90m (28ms)[0m
+  [32m  ✓[0m[90m SS-05 selects Best rated[0m[90m (28ms)[0m
+  [32m  ✓[0m[90m SS-06 lists the five sorts in order[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m SS-07 calls onChange once with price-asc and keeps Featured selected[0m[90m (166ms)[0m
+  [32m  ✓[0m[90m SS-08 calls onChange once with price-desc and keeps Price: low to high selected[0m[90m (153ms)[0m
+  [32m  ✓[0m[90m SS-09 calls onChange once with name and keeps Price: high to low selected[0m[90m (152ms)[0m
+  [32m  ✓[0m[90m SS-10 calls onChange once with rating and keeps Name: A to Z selected[0m[90m (152ms)[0m
+  [32m  ✓[0m[90m SS-11 calls onChange once with featured and keeps Best rated selected[0m[90m (156ms)[0m
+  [32m  ✓[0m[90m SS-12 shows the sort the parent passes and does not call onChange[0m[90m (105ms)[0m
+  [32m  ✓[0m[90m SS-13 names the select Sort by[0m[90m (28ms)[0m
+  [32m  ✓[0m[90m SS-14 keeps focus visible and chooses Price: high to low from the keyboard[0m[90m (143ms)[0m
+  [32m  ✓[0m[90m SS-15 keeps Sort by and the selected sort at a 4.5 to 1 contrast[0m[90m (28ms)[0m
 
 
-[92m [0m[32m 15 passing[0m[90m (2s)[0m
+[92m [0m[32m 15 passing[0m[90m (1s)[0m
 
 
 [32m  ([4m[1mResults[22m[24m)[39m
@@ -514,13 +514,13 @@ Opening Cypress...
 
 [0m[0m
 [0m  Toast[0m
-  [32m  ✓[0m[90m TO-01 shows the message as a status[0m[90m (94ms)[0m
-  [32m  ✓[0m[90m TO-02 uses the success background[0m[90m (39ms)[0m
-  [32m  ✓[0m[90m TO-03 uses the error background[0m[90m (37ms)[0m
-  [32m  ✓[0m[90m TO-04 calls onClose from Dismiss[0m[90m (129ms)[0m
+  [32m  ✓[0m[90m TO-01 shows the message as a status[0m[90m (61ms)[0m
+  [32m  ✓[0m[90m TO-02 uses the success background[0m[90m (31ms)[0m
+  [32m  ✓[0m[90m TO-03 uses the error background[0m[90m (30ms)[0m
+  [32m  ✓[0m[90m TO-04 calls onClose from Dismiss[0m[90m (109ms)[0m
   [31m  1) TO-05 calls onClose once after 4 seconds[0m
-  [32m  ✓[0m[90m TO-06 stays open when duration is 0[0m[90m (45ms)[0m
-  [32m  ✓[0m[90m TO-07 keeps focus visible and dismisses with Enter[0m[90m (45ms)[0m
+  [32m  ✓[0m[90m TO-06 stays open when duration is 0[0m[90m (36ms)[0m
+  [32m  ✓[0m[90m TO-07 keeps focus visible and dismisses with Enter[0m[90m (41ms)[0m
 
 
 [92m [0m[32m 6 passing[0m[90m (5s)[0m
@@ -563,35 +563,35 @@ Opening Cypress...
 
 [90m   [39m    [90mSpec[39m                                              [90mTests[39m  [90mPassing[39m  [90mFailing[39m  [90mPending[39m  [90mSkipped[39m [90m [39m
 [90m  ┌[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┐[39m
-[90m  │[39m [32m✔[39m  [0mCareLevelBadge.cy.tsx[0m                    [90m242ms[39m        [0m5[0m        [32m4[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mCareLevelBadge.cy.tsx[0m                    [90m177ms[39m        [0m5[0m        [32m4[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mCartLine.cy.tsx[0m                          [90m645ms[39m        [0m8[0m        [32m8[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mCartLine.cy.tsx[0m                          [90m550ms[39m        [0m8[0m        [32m8[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mEmptyState.cy.tsx[0m                        [90m318ms[39m        [0m6[0m        [32m6[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mEmptyState.cy.tsx[0m                        [90m259ms[39m        [0m6[0m        [32m6[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mErrorBanner.cy.tsx[0m                       [90m384ms[39m        [0m5[0m        [32m5[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mErrorBanner.cy.tsx[0m                       [90m329ms[39m        [0m5[0m        [32m5[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
 [90m  │[39m [32m✔[39m  [0mLightFilter.cy.tsx[0m                       [90m00:01[39m       [0m16[0m       [32m16[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mOrderSummary.cy.tsx[0m                      [90m392ms[39m        [0m8[0m        [32m8[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mOrderSummary.cy.tsx[0m                      [90m287ms[39m        [0m8[0m        [32m8[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mPetSafeTag.cy.tsx[0m                        [90m274ms[39m        [0m5[0m        [32m5[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mPetSafeTag.cy.tsx[0m                        [90m191ms[39m        [0m5[0m        [32m5[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mPlantCard.cy.tsx[0m                         [90m00:01[39m       [0m18[0m       [32m16[39m        [90m-[39m        [36m2[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mPlantCard.cy.tsx[0m                         [90m845ms[39m       [0m18[0m       [32m16[39m        [90m-[39m        [36m2[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mPriceTag.cy.tsx[0m                          [90m431ms[39m       [0m13[0m        [32m8[39m        [90m-[39m        [36m5[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mPriceTag.cy.tsx[0m                          [90m307ms[39m       [0m13[0m        [32m8[39m        [90m-[39m        [36m5[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mQuantityStepper.cy.tsx[0m                   [90m339ms[39m        [0m3[0m        [32m2[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mQuantityStepper.cy.tsx[0m                   [90m275ms[39m        [0m3[0m        [32m2[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
 [90m  │[39m [32m✔[39m  [0mSearchBox.cy.tsx[0m                         [90m00:01[39m       [0m18[0m       [32m16[39m        [90m-[39m        [36m2[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mSizePicker.cy.tsx[0m                        [90m485ms[39m        [0m8[0m        [32m7[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mSizePicker.cy.tsx[0m                        [90m382ms[39m        [0m8[0m        [32m7[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
 [90m  │[39m [32m✔[39m  [0mSortSelect.cy.tsx[0m                        [90m00:01[39m       [0m15[0m       [32m15[39m        [90m-[39m        [90m-[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
 [90m  │[39m [31m✖[39m  [0mToast.cy.tsx[0m                             [90m00:04[39m        [0m7[0m        [32m6[39m        [31m1[39m        [90m-[39m        [90m-[39m [90m│[39m
 [90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
-[90m   [39m [31m✖[39m  [31m1 of 14 failed (7%)[39m                      [90m00:14[39m      [0m135[0m      [32m122[39m        [31m1[39m       [36m12[39m        [90m-[39m [90m [39m
+[90m   [39m [31m✖[39m  [31m1 of 14 failed (7%)[39m                      [90m00:12[39m      [0m135[0m      [32m122[39m        [31m1[39m       [36m12[39m        [90m-[39m [90m [39m
 
 [90m----------------------------------------------------------------------------------------------------[39m
 
@@ -637,14 +637,14 @@ UI exit: 0
 
 [0m[0m
 [0m  Browse page[0m
-  [32m  ✓[0m[90m shows two product cards and the heading "2 plants"[0m[90m (1170ms)[0m
-  [32m  ✓[0m[90m says no plants match when the catalog is empty[0m[90m (418ms)[0m
-  [32m  ✓[0m[90m keeps a very long plant name inside its card[0m[90m (362ms)[0m
+  [32m  ✓[0m[90m shows two product cards and the heading "2 plants"[0m[90m (689ms)[0m
+  [32m  ✓[0m[90m says no plants match when the catalog is empty[0m[90m (265ms)[0m
+  [32m  ✓[0m[90m keeps a very long plant name inside its card[0m[90m (252ms)[0m
   [36m  - shows $0.00 for a plant priced at zero[0m
   [36m  - offers Try again when the catalog cannot be loaded[0m
 
 
-[92m [0m[32m 3 passing[0m[90m (2s)[0m
+[92m [0m[32m 3 passing[0m[90m (1s)[0m
 [36m [0m[36m 2 pending[0m
 
 
@@ -658,7 +658,7 @@ UI exit: 0
 [90m  │[39m [90mSkipped:[39m      [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mScreenshots:[39m  [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mVideo:[39m        [32mfalse[39m                                                                            [90m│[39m
-[90m  │[39m [90mDuration:[39m     [32m2 seconds[39m                                                                        [90m│[39m
+[90m  │[39m [90mDuration:[39m     [32m1 second[39m                                                                         [90m│[39m
 [90m  │[39m [90mSpec Ran:[39m     [32m[32mbrowse.cy.ts[32m[39m                                                                     [90m│[39m
 [90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
 
@@ -669,14 +669,14 @@ UI exit: 0
 
 [0m[0m
 [0m  Cart page[0m
-  [32m  ✓[0m[90m CA-01 shows Your cart, Aloe Vera, shipping $6.95, and the free-shipping hint[0m[90m (973ms)[0m
-  [32m  ✓[0m[90m CA-02 shows the heading Your cart is empty and a Browse plants link[0m[90m (404ms)[0m
-  [32m  ✓[0m[90m CA-03 shows an alert that the cart couldn't be loaded and a Try again button[0m[90m (353ms)[0m
-  [32m  ✓[0m[90m CA-04 sends a signed-out visit to /login?next=/cart[0m[90m (309ms)[0m
+  [32m  ✓[0m[90m CA-01 shows Your cart, Aloe Vera, shipping $6.95, and the free-shipping hint[0m[90m (631ms)[0m
+  [32m  ✓[0m[90m CA-02 shows the heading Your cart is empty and a Browse plants link[0m[90m (276ms)[0m
+  [32m  ✓[0m[90m CA-03 shows an alert that the cart couldn't be loaded and a Try again button[0m[90m (236ms)[0m
+  [32m  ✓[0m[90m CA-04 sends a signed-out visit to /login?next=/cart[0m[90m (214ms)[0m
   [36m  - CA-05 shows Air Plant and the price $0.00[0m
 
 
-[92m [0m[32m 4 passing[0m[90m (2s)[0m
+[92m [0m[32m 4 passing[0m[90m (1s)[0m
 [36m [0m[36m 1 pending[0m
 
 
@@ -690,7 +690,7 @@ UI exit: 0
 [90m  │[39m [90mSkipped:[39m      [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mScreenshots:[39m  [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mVideo:[39m        [32mfalse[39m                                                                            [90m│[39m
-[90m  │[39m [90mDuration:[39m     [32m2 seconds[39m                                                                        [90m│[39m
+[90m  │[39m [90mDuration:[39m     [32m1 second[39m                                                                         [90m│[39m
 [90m  │[39m [90mSpec Ran:[39m     [32m[32mcart.cy.ts[32m[39m                                                                       [90m│[39m
 [90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
 
@@ -701,14 +701,14 @@ UI exit: 0
 
 [0m[0m
 [0m  Orders page[0m
-  [32m  ✓[0m[90m OR-01 shows Your orders, the link Order ord-1001, and the total $16.94[0m[90m (947ms)[0m
-  [32m  ✓[0m[90m OR-02 shows the heading No orders yet[0m[90m (383ms)[0m
-  [32m  ✓[0m[90m OR-03 shows an alert that orders couldn't be loaded and a Try again button[0m[90m (368ms)[0m
-  [32m  ✓[0m[90m OR-04 sends a signed-out visit to /login?next=/orders[0m[90m (324ms)[0m
+  [32m  ✓[0m[90m OR-01 shows Your orders, the link Order ord-1001, and the total $16.94[0m[90m (611ms)[0m
+  [32m  ✓[0m[90m OR-02 shows the heading No orders yet[0m[90m (260ms)[0m
+  [32m  ✓[0m[90m OR-03 shows an alert that orders couldn't be loaded and a Try again button[0m[90m (239ms)[0m
+  [32m  ✓[0m[90m OR-04 sends a signed-out visit to /login?next=/orders[0m[90m (217ms)[0m
   [36m  - OR-05 shows the link Order ord-zero and the total $0.00[0m
 
 
-[92m [0m[32m 4 passing[0m[90m (2s)[0m
+[92m [0m[32m 4 passing[0m[90m (1s)[0m
 [36m [0m[36m 1 pending[0m
 
 
@@ -722,7 +722,7 @@ UI exit: 0
 [90m  │[39m [90mSkipped:[39m      [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mScreenshots:[39m  [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mVideo:[39m        [32mfalse[39m                                                                            [90m│[39m
-[90m  │[39m [90mDuration:[39m     [32m2 seconds[39m                                                                        [90m│[39m
+[90m  │[39m [90mDuration:[39m     [32m1 second[39m                                                                         [90m│[39m
 [90m  │[39m [90mSpec Ran:[39m     [32m[32morders.cy.ts[32m[39m                                                                     [90m│[39m
 [90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
 
@@ -733,14 +733,14 @@ UI exit: 0
 
 [0m[0m
 [0m  Plant page[0m
-  [32m  ✓[0m[90m PL-01 shows heading Aloe Vera, price $9.99, and 18 in stock[0m[90m (876ms)[0m
-  [32m  ✓[0m[90m PL-02 shows the heading We couldn't find that plant and a Back to the shop link[0m[90m (354ms)[0m
-  [32m  ✓[0m[90m PL-03 shows an alert that the plant couldn't be loaded and a Try again button[0m[90m (312ms)[0m
-  [32m  ✓[0m[90m PL-04 sends a signed-out shopper to /login?next=/plants/pl-aloe[0m[90m (429ms)[0m
+  [32m  ✓[0m[90m PL-01 shows heading Aloe Vera, price $9.99, and 18 in stock[0m[90m (577ms)[0m
+  [32m  ✓[0m[90m PL-02 shows the heading We couldn't find that plant and a Back to the shop link[0m[90m (232ms)[0m
+  [32m  ✓[0m[90m PL-03 shows an alert that the plant couldn't be loaded and a Try again button[0m[90m (217ms)[0m
+  [32m  ✓[0m[90m PL-04 sends a signed-out shopper to /login?next=/plants/pl-aloe[0m[90m (302ms)[0m
   [36m  - PL-05 shows heading Air Plant and the price $0.00[0m
 
 
-[92m [0m[32m 4 passing[0m[90m (2s)[0m
+[92m [0m[32m 4 passing[0m[90m (1s)[0m
 [36m [0m[36m 1 pending[0m
 
 
@@ -754,7 +754,7 @@ UI exit: 0
 [90m  │[39m [90mSkipped:[39m      [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mScreenshots:[39m  [32m0[39m                                                                                [90m│[39m
 [90m  │[39m [90mVideo:[39m        [32mfalse[39m                                                                            [90m│[39m
-[90m  │[39m [90mDuration:[39m     [32m2 seconds[39m                                                                        [90m│[39m
+[90m  │[39m [90mDuration:[39m     [32m1 second[39m                                                                         [90m│[39m
 [90m  │[39m [90mSpec Ran:[39m     [32m[32mplant.cy.ts[32m[39m                                                                      [90m│[39m
 [90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
 
@@ -766,15 +766,15 @@ UI exit: 0
 
 [90m   [39m    [90mSpec[39m                                              [90mTests[39m  [90mPassing[39m  [90mFailing[39m  [90mPending[39m  [90mSkipped[39m [90m [39m
 [90m  ┌[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┐[39m
-[90m  │[39m [32m✔[39m  [0mbrowse.cy.ts[0m                             [90m00:02[39m        [0m5[0m        [32m3[39m        [90m-[39m        [36m2[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mbrowse.cy.ts[0m                             [90m00:01[39m        [0m5[0m        [32m3[39m        [90m-[39m        [36m2[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mcart.cy.ts[0m                               [90m00:02[39m        [0m5[0m        [32m4[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mcart.cy.ts[0m                               [90m00:01[39m        [0m5[0m        [32m4[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0morders.cy.ts[0m                             [90m00:02[39m        [0m5[0m        [32m4[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0morders.cy.ts[0m                             [90m00:01[39m        [0m5[0m        [32m4[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
 [90m  ├[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┤[39m
-[90m  │[39m [32m✔[39m  [0mplant.cy.ts[0m                              [90m00:02[39m        [0m5[0m        [32m4[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
+[90m  │[39m [32m✔[39m  [0mplant.cy.ts[0m                              [90m00:01[39m        [0m5[0m        [32m4[39m        [90m-[39m        [36m1[39m        [90m-[39m [90m│[39m
 [90m  └[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m─[39m[90m┘[39m
-[90m   [39m [32m✔[39m  [32mAll specs passed![39m                        [90m00:08[39m       [0m20[0m       [32m15[39m        [90m-[39m        [36m5[39m        [90m-[39m [90m [39m
+[90m   [39m [32m✔[39m  [32mAll specs passed![39m                        [90m00:05[39m       [0m20[0m       [32m15[39m        [90m-[39m        [36m5[39m        [90m-[39m [90m [39m
 
 
 Playwright exit: 1
