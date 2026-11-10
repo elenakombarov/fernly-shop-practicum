@@ -1,0 +1,19 @@
+{
+  "lines": [
+    {
+      "id": "ln-air",
+      "plantId": "pl-free",
+      "name": "Air Plant",
+      "size": "S",
+      "unitPrice": 0,
+      "quantity": 1,
+      "lineTotal": 0,
+      "stock": 8,
+      "imageUrl": "/plants/succulent.svg"
+    }
+  ],
+  "itemCount": 1,
+  "subtotal": 0,
+  "shipping": 6.95,
+  "total": 6.95
+}
