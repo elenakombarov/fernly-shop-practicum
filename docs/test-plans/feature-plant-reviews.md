@@ -1,3 +1,5 @@
+Approved.
+
 # Test plan: feature-plant-reviews
 
 Source: `untrusted.diff` (produced as `git diff origin/<base>...HEAD`)
