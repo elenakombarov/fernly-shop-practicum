@@ -53,22 +53,37 @@ assert(
 
 section('Base findings without F-NN identifiers');
 {
-  const baseMd = gitShow('origin/init:FINDINGS.md');
+  // Synthetic pre-F-NN base: titles match HEAD FINDINGS without ids.
   const branchMd = readFileSync(path.join(ROOT, 'FINDINGS.md'), 'utf8');
-  const base = parseFindings(baseMd);
   const branch = parseFindings(branchMd);
-  const neu = diffNewFindings(branch, base);
-
-  assert(base.length >= 12, `expected >=12 base confirmed findings, got ${base.length}`);
-  assert(
-    base.every((f) => f.id.startsWith('U-')),
-    'origin/init confirmed findings should parse without F-NN ids',
-  );
   assert(branch.length === 12, `expected 12 branch confirmed findings, got ${branch.length}`);
   assert(
     branch.every((f) => /^F-\d+$/.test(f.id)),
     'branch confirmed findings must keep stable F-NN ids',
   );
+  const untitledBase = `# Findings\n\n${branch
+    .map((f) => `### ${f.title}\n\n- body\n`)
+    .join('\n')}\n## Suspicions\n\n### Not a finding\n\n- skip\n`;
+  const base = parseFindings(untitledBase);
+  assert(base.length === 12, `expected 12 untitled base findings, got ${base.length}`);
+  assert(
+    base.every((f) => f.id.startsWith('U-')),
+    'untitled base findings should parse without F-NN ids',
+  );
+  const neu = diffNewFindings(branch, base);
+  assert(
+    neu.length === 0,
+    `expected 0 new findings vs untitled base, got ${neu.length}: ${neu.map((f) => f.id).join(', ')}`,
+  );
+  console.log(`PASS untitled base → ${base.length} base, ${branch.length} branch, ${neu.length} new`);
+}
+
+section('Live origin/init vs HEAD → zero new findings');
+{
+  const base = parseFindings(gitShow('origin/init:FINDINGS.md'));
+  const branch = parseFindings(readFileSync(path.join(ROOT, 'FINDINGS.md'), 'utf8'));
+  const neu = diffNewFindings(branch, base);
+  assert(base.length >= 12, `expected >=12 base findings, got ${base.length}`);
   assert(
     neu.length === 0,
     `expected 0 new findings vs origin/init, got ${neu.length}: ${neu.map((f) => f.id).join(', ')}`,
