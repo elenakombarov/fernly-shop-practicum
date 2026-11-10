@@ -1,15 +1,15 @@
 # QA pipeline metrics
 
-Repo: `elenakombarov/fernly-shop-practicum`. Generated 2026-11-09T20:00:00Z by `node scripts/qa-metrics.mjs` (read-only collection; uses `gh` only; never opens issues).
+Repo: `elenakombarov/fernly-shop-practicum`. Generated 2026-11-10T01:09:42Z by `node scripts/qa-metrics.mjs` (read-only collection; uses `gh` only; never opens issues).
 
-**Totals:** routing accuracy = 6/7 (85.7%); false-alarm rate = 0/1 (0.0%).
+**Totals:** routing accuracy = 9/18 (50.0%); false-alarm rate = —.
 
 **Spend:** agent cost is not available in GitHub; see the [Cursor dashboard](https://cursor.com/dashboard) for usage and billing.
 
 | PR | Branch | Plan review | CI status | Tests min | Triage min | Artifacts | Findings | False alarms |
 | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: |
-| [#42](https://github.com/elenakombarov/fernly-shop-practicum/pull/42) | block13-page-objects | 4/5 | failure | 18.3 | 55 | a11y-report, cypress-results, playwright-reports, qa-report | 0 | 0 |
-| [#7](https://github.com/elenakombarov/fernly-shop-practicum/pull/7) | sample-plan | 2/2 | success | 10 | 20 | playwright-reports | 1 | 0 |
+| [#1](https://github.com/elenakombarov/fernly-shop-practicum/pull/1) | feature/promo-codes | 4/10 | action_required | 22 | 6 | — | 0 | 0 |
+| [#2](https://github.com/elenakombarov/fernly-shop-practicum/pull/2) | feature/plant-reviews | 5/8 | failure | 12.6 | 3.9 | a11y-report, cypress-results, cypress-screenshots, playwright-reports, playwright-test-results, qa-metrics-doc, qa-report | 0 | 0 |
 
 ## How each number is measured
 
