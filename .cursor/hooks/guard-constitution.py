@@ -1,71 +1,192 @@
 #!/usr/bin/env python3
-"""Block agent edits that introduce Playwright/Cypress constitution violations."""
+"""Block agent edits that introduce constitution WON'T violations.
 
+Port of the Module 1 guard-constitution.mjs hook. Guards tests/, pages/, and
+web/cypress/**/*.cy.ts and *.cy.tsx. Also blocks cy.wait(<number>).
+"""
 from __future__ import annotations
 
 import json
 import re
 import sys
-from collections.abc import Callable
 from pathlib import Path
 
-GUARDED_FILE = re.compile(
-    r"((tests|pages)/.+\.[jt]sx?|web/cypress/.+\.cy\.(ts|tsx))$",
+GUARD_FILE_RE = re.compile(
+    r"(?:^|/)(?:(?:tests|pages)/.*\.(?:tsx?|jsx?)|web/cypress/.*\.cy\.tsx?)$",
+    re.IGNORECASE,
 )
-SPEC_FILE = re.compile(
-    r"(tests/.+\.(spec|test)\.[jt]sx?|web/cypress/.+\.cy\.(ts|tsx))$",
+SPEC_FILE_RE = re.compile(
+    r"(?:^|/)(?:tests/.*\.(?:spec|test)\.[jt]sx?|web/cypress/.*\.cy\.tsx?)$",
+    re.IGNORECASE,
 )
 
-XPATH_LOCATOR = re.compile(r"""locator\s*\(\s*['"`]//""")
-ANY_TYPE = re.compile(
-    r":\s*any\b|as\s+any\b|<any>|Array<any>",
-)
-EMAIL_FILL = re.compile(r"""\.fill\s*\(\s*['"][^'"]*@[^'"]*['"]\s*\)""")
-CRED_ASSIGN = re.compile(
-    r"""(?i)(password|secret|api_key|token)\s*[:=]\s*['"][^'"]{4,}['"]""",
-)
-DESCRIBE_TAG = re.compile(
-    r"test\.describe\s*\([\s\S]*?,\s*\{[\s\S]*?\btag\s*:",
-)
-CY_WAIT_MS = re.compile(r"cy\.wait\s*\(\s*\d+")
+
+def count_matches(pattern: str, content: str, flags: int = 0) -> int:
+    return len(re.findall(pattern, content, flags))
 
 
-def active_text(content: str) -> str:
-    lines: list[str] = []
+def count_any(content: str) -> int:
+    return (
+        count_matches(r":\s*any\b", content)
+        + count_matches(r"\bas\s+any\b", content)
+        + count_matches(r"<any>", content)
+        + count_matches(r"Array<any>", content)
+    )
+
+
+VIOLATION_RULES = [
+    {
+        "reason": "uses .waitForTimeout( — use web-first expect() instead",
+        "count": lambda content: count_matches(r"\.waitForTimeout\s*\(", content),
+    },
+    {
+        "reason": "uses cy.wait(<number>) — wait for an alias or for what the user sees",
+        "count": lambda content: count_matches(r"cy\.wait\s*\(\s*\d", content),
+    },
+    {
+        "reason": "uses XPath locator (locator('//…')) — use role/label/text locators",
+        "count": lambda content: count_matches(r"\.locator\s*\(\s*['\"`]//", content),
+    },
+    {
+        "reason": "uses the any type — avoid : any, as any, <any>, Array<any>",
+        "count": count_any,
+    },
+    {
+        "reason": "hardcoded credential in .fill() with a literal email",
+        "count": lambda content: count_matches(
+            r"\.fill\s*\(\s*['\"][^'\"]*@[^'\"]*['\"]",
+            content,
+            re.IGNORECASE,
+        ),
+    },
+    {
+        "reason": (
+            "hardcoded secret — password/secret/api_key/token assigned a literal "
+            "string (4+ chars)"
+        ),
+        "count": lambda content: count_matches(
+            r"(?:password|secret|api_key|token)\s*[=:]\s*['\"][^'\"]{4,}['\"]",
+            content,
+            re.IGNORECASE,
+        ),
+    },
+    {
+        "reason": "tag on test.describe() — tags belong on individual test() blocks only",
+        "count": lambda content: count_matches(
+            r"test\.describe\s*\([\s\S]*?\{\s*tag\s*:",
+            content,
+        ),
+    },
+]
+
+
+def read_hook_input() -> dict:
+    raw_bytes = sys.stdin.buffer.read()
+    if raw_bytes.startswith((b"\xff\xfe", b"\xfe\xff")):
+        raw = raw_bytes.decode("utf-16")
+    else:
+        raw = raw_bytes.decode("utf-8-sig")
+    if not raw.strip():
+        print("guard-constitution: empty stdin", file=sys.stderr)
+        sys.exit(1)
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError as exc:
+        print(f"guard-constitution: invalid JSON — {exc}", file=sys.stderr)
+        sys.exit(1)
+
+
+def normalize_hook_context(payload: dict) -> tuple[str, str | None, list]:
+    event = payload.get("hook_event_name") or "afterFileEdit"
+    if event == "preToolUse":
+        tool_input = payload.get("tool_input") or {}
+        file_path = (
+            tool_input.get("path")
+            or tool_input.get("file_path")
+            or tool_input.get("filePath")
+            or payload.get("file_path")
+        )
+        if not file_path:
+            return event, None, []
+        if "old_string" in tool_input or "new_string" in tool_input:
+            return (
+                event,
+                file_path,
+                [
+                    {
+                        "old_string": tool_input.get("old_string") or "",
+                        "new_string": tool_input.get("new_string") or "",
+                    }
+                ],
+            )
+        content = tool_input.get("content")
+        contents = tool_input.get("contents")
+        if isinstance(content, str) or isinstance(contents, str):
+            return (
+                event,
+                file_path,
+                [
+                    {
+                        "old_string": "",
+                        "new_string": content if isinstance(content, str) else contents,
+                        "fullReplace": True,
+                    }
+                ],
+            )
+        return event, file_path, []
+
+    return event, payload.get("file_path"), payload.get("edits") or []
+
+
+def apply_edits_to_content(content: str, edits: list) -> str | None:
+    next_content = content
+    for edit in edits:
+        if not isinstance(edit, dict):
+            continue
+        old_string = edit.get("old_string") or ""
+        new_string = edit.get("new_string") or ""
+        if edit.get("fullReplace"):
+            next_content = new_string
+            continue
+        if old_string not in next_content:
+            return None
+        next_content = next_content.replace(old_string, new_string, 1)
+    return next_content
+
+
+def normalize_path(file_path: str) -> str:
+    return file_path.replace("\\", "/")
+
+
+def is_guarded_file(file_path: str) -> bool:
+    return bool(GUARD_FILE_RE.search(normalize_path(file_path)))
+
+
+def is_spec_file(file_path: str) -> bool:
+    return bool(SPEC_FILE_RE.search(normalize_path(file_path)))
+
+
+def count_active_expects(content: str) -> int:
+    total = 0
     for line in content.splitlines():
         stripped = line.lstrip()
         if stripped.startswith("//") or stripped.startswith("*"):
             continue
-        lines.append(line.split("//", 1)[0])
-    return "\n".join(lines)
-
-
-def count_active_assertions(content: str) -> int:
-    total = 0
-    for line in active_text(content).splitlines():
-        total += line.count("expect(")
-        total += line.count(".should(")
+        code_part = line.split("//", 1)[0]
+        total += code_part.count("expect(")
     return total
 
 
-def count_wait_for_timeout(content: str) -> int:
-    return active_text(content).count(".waitForTimeout(")
-
-
-def count_cy_wait_ms(content: str) -> int:
-    return len(CY_WAIT_MS.findall(active_text(content)))
-
-
-def count_pattern(content: str, pattern: re.Pattern[str]) -> int:
-    return len(pattern.findall(active_text(content)))
-
-
-def reconstruct_before(after_content: str, edits: list[dict]) -> str | None:
+def reconstruct_before(after_content: str, edits: list) -> str | None:
     content = after_content
     for edit in reversed(edits):
-        new_string = edit.get("new_string")
+        if not isinstance(edit, dict):
+            return None
+        if "old_string" not in edit or "new_string" not in edit:
+            return None
         old_string = edit.get("old_string")
-        if new_string is None or old_string is None:
+        new_string = edit.get("new_string")
+        if old_string is None or new_string is None:
             return None
         if new_string not in content:
             return None
@@ -73,159 +194,119 @@ def reconstruct_before(after_content: str, edits: list[dict]) -> str | None:
     return content
 
 
-def check_increase(
-    label: str,
-    before: str,
-    after: str,
-    counter: Callable[[str], int],
-) -> str | None:
-    before_n = counter(before)
-    after_n = counter(after)
-    if after_n > before_n:
-        return f"{label} introduced ({before_n} -> {after_n})"
-    return None
-
-
-def check_delta_increase(
-    label: str,
-    old_s: str,
-    new_s: str,
-    counter: Callable[[str], int],
-) -> str | None:
-    if counter(new_s) > counter(old_s):
-        return f"{label} introduced in edit"
-    return None
-
-
-def collect_file_violations(before: str, after: str, *, is_spec: bool) -> list[str]:
-    reasons: list[str] = []
-
-    checks: list[tuple[str, Callable[[str], int]]] = [
-        (".waitForTimeout(", count_wait_for_timeout),
-        ("cy.wait(<milliseconds>)", count_cy_wait_ms),
-        ("XPath locator (locator('//…'))", lambda s: count_pattern(s, XPATH_LOCATOR)),
-        ("TypeScript any", lambda s: count_pattern(s, ANY_TYPE)),
-        ("Hardcoded email in .fill()", lambda s: count_pattern(s, EMAIL_FILL)),
-        (
-            "Hardcoded password/secret/api_key/token",
-            lambda s: count_pattern(s, CRED_ASSIGN),
-        ),
-        ("tag on test.describe()", lambda s: count_pattern(s, DESCRIBE_TAG)),
-    ]
-
-    for label, counter in checks:
-        reason = check_increase(label, before, after, counter)
-        if reason:
-            reasons.append(reason)
-
-    if is_spec:
-        before_e = count_active_assertions(before)
-        after_e = count_active_assertions(after)
-        if before_e > after_e:
-            reasons.append(
-                f"active expect( / .should( count dropped ({before_e} -> {after_e})"
-            )
-
+def new_violation_reasons(before_content: str, after_content: str) -> list[str]:
+    reasons = []
+    for rule in VIOLATION_RULES:
+        if rule["count"](after_content) > rule["count"](before_content):
+            reasons.append(rule["reason"])
     return reasons
 
 
-def collect_delta_violations(old_s: str, new_s: str, *, is_spec: bool) -> list[str]:
-    reasons: list[str] = []
-
-    checks: list[tuple[str, Callable[[str], int]]] = [
-        (".waitForTimeout(", count_wait_for_timeout),
-        ("cy.wait(<milliseconds>)", count_cy_wait_ms),
-        ("XPath locator (locator('//…'))", lambda s: count_pattern(s, XPATH_LOCATOR)),
-        ("TypeScript any", lambda s: count_pattern(s, ANY_TYPE)),
-        ("Hardcoded email in .fill()", lambda s: count_pattern(s, EMAIL_FILL)),
-        (
-            "Hardcoded password/secret/api_key/token",
-            lambda s: count_pattern(s, CRED_ASSIGN),
-        ),
-        ("tag on test.describe()", lambda s: count_pattern(s, DESCRIBE_TAG)),
-    ]
-
-    for label, counter in checks:
-        reason = check_delta_increase(label, old_s, new_s, counter)
-        if reason:
-            reasons.append(reason)
-
-    if is_spec:
-        if count_active_assertions(new_s) < count_active_assertions(old_s):
-            reasons.append("active expect( / .should( removed or commented in edit")
-
-    return reasons
+def new_violations_from_edits(edits: list) -> list[str]:
+    reasons: set[str] = set()
+    for edit in edits:
+        if not isinstance(edit, dict):
+            continue
+        old_s = edit.get("old_string") or ""
+        new_s = edit.get("new_string") or ""
+        for rule in VIOLATION_RULES:
+            if rule["count"](new_s) > rule["count"](old_s):
+                reasons.add(rule["reason"])
+    return list(reasons)
 
 
-def block(file_path: str, reasons: list[str]) -> None:
-    detail = "; ".join(reasons)
-    message = f"Blocked: constitution violation in {file_path} — {detail}"
-    print(json.dumps({"user_message": message, "agent_message": message}))
-    print(message, file=sys.stderr)
+def block_message(file_path: str, reasons: list[str], expect_detail: str | None) -> str:
+    parts = [f"Blocked: constitution violation in {file_path}"]
+    if reasons:
+        parts.append("; ".join(reasons))
+    if expect_detail:
+        parts.append(expect_detail)
+    return " — ".join(parts)
+
+
+def allow(event: str, file_path: str | None) -> None:
+    if event == "preToolUse":
+        print(json.dumps({"permission": "allow"}))
+    if file_path:
+        print(f"guard-constitution: OK — {file_path}", file=sys.stderr)
+    sys.exit(0)
+
+
+def deny(event: str, msg: str) -> None:
+    body = {"user_message": msg, "agent_message": msg}
+    if event == "preToolUse":
+        print(json.dumps({"permission": "deny", **body}))
+    else:
+        print(json.dumps(body))
+    print(msg, file=sys.stderr)
     sys.exit(2)
 
 
 def main() -> None:
-    raw = sys.stdin.read()
-    if not raw.strip():
-        print("guard-constitution: empty stdin", file=sys.stderr)
-        sys.exit(1)
+    payload = read_hook_input()
+    event, file_path, edits = normalize_hook_context(payload)
+    if not file_path:
+        allow(event, None)
 
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        print(f"guard-constitution: invalid JSON — {exc}", file=sys.stderr)
-        sys.exit(1)
-
-    file_path = payload.get("file_path") or ""
-    normalized = file_path.replace("\\", "/")
-    if not GUARDED_FILE.search(normalized):
-        sys.exit(0)
-
-    edits = payload.get("edits")
-    if edits is None:
-        edits = []
-    if not isinstance(edits, list):
-        print("guard-constitution: edits must be a list", file=sys.stderr)
-        sys.exit(1)
+    if not is_guarded_file(file_path):
+        allow(event, file_path)
 
     path = Path(file_path)
-    if not path.is_file():
-        print(f"guard-constitution: file not found — {file_path}", file=sys.stderr)
-        sys.exit(1)
+    on_disk = path.read_text(encoding="utf-8") if path.is_file() else ""
 
-    after_content = path.read_text(encoding="utf-8")
-    is_spec = bool(SPEC_FILE.search(normalized))
-    before_content = reconstruct_before(after_content, edits)
-
-    reasons: list[str] = []
-    if before_content is not None:
-        reasons = collect_file_violations(before_content, after_content, is_spec=is_spec)
+    reconstruction_failed = False
+    if event == "preToolUse":
+        before_content = on_disk
+        projected = apply_edits_to_content(on_disk, edits)
+        if projected is None:
+            reconstruction_failed = True
+            after_content = on_disk
+        else:
+            after_content = projected
     else:
+        if not path.is_file():
+            print(f"guard-constitution: file not found — {file_path}", file=sys.stderr)
+            sys.exit(1)
+        after_content = on_disk
+        before_content = reconstruct_before(after_content, edits)
+        if before_content is None:
+            reconstruction_failed = True
+
+    reasons = (
+        new_violations_from_edits(edits)
+        if reconstruction_failed
+        else new_violation_reasons(before_content or "", after_content)
+    )
+
+    expect_detail = None
+    if is_spec_file(file_path) and not reconstruction_failed:
+        before_expect = count_active_expects(before_content or "")
+        after_expect = count_active_expects(after_content)
+        if before_expect > after_expect:
+            expect_detail = (
+                f"active expect( count {before_expect} -> {after_expect} — "
+                "do not delete or weaken assertions"
+            )
+    elif is_spec_file(file_path) and reconstruction_failed:
+        delta = 0
         for edit in edits:
+            if not isinstance(edit, dict):
+                continue
             old_s = edit.get("old_string") or ""
             new_s = edit.get("new_string") or ""
-            reasons.extend(
-                collect_delta_violations(old_s, new_s, is_spec=is_spec),
+            delta += count_active_expects(old_s) - count_active_expects(new_s)
+        if delta > 0:
+            after_expect = count_active_expects(after_content)
+            before_expect = after_expect + delta
+            expect_detail = (
+                f"active expect( count {before_expect} -> {after_expect} — "
+                "do not delete or weaken assertions"
             )
-        if is_spec and not any("expect(" in r or ".should(" in r for r in reasons):
-            after_count = count_active_assertions(after_content)
-            delta = sum(
-                count_active_assertions(edit.get("old_string") or "")
-                - count_active_assertions(edit.get("new_string") or "")
-                for edit in edits
-            )
-            before_count = after_count + delta
-            if before_count > after_count:
-                reasons.append(
-                    f"active expect( / .should( count dropped ({before_count} -> {after_count})"
-                )
 
-    if reasons:
-        block(file_path, reasons)
+    if reasons or expect_detail:
+        deny(event, block_message(file_path, reasons, expect_detail))
 
-    print(f"guard-constitution: OK — {file_path}", file=sys.stderr)
-    sys.exit(0)
+    allow(event, file_path)
 
 
 if __name__ == "__main__":

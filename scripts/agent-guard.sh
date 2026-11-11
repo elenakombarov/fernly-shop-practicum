@@ -1,99 +1,105 @@
 #!/usr/bin/env bash
-# agent-guard.sh — reject agent patches that touch forbidden paths or files outside allowed globs.
-# Bash 3.2 compatible.
+# Refuse a patch that touches files outside the allow-list, or that only a
+# person may change. Bash 3.2 compatible. Empty patch is fine.
 set -euo pipefail
 
 usage() {
   echo "usage: agent-guard.sh <patch> <allowed pattern>..." >&2
+  exit 2
 }
 
-if [ $# -lt 1 ]; then
-  usage
-  exit 1
-fi
+[ "$#" -ge 1 ] || usage
 
-PATCH="$1"
+patch=$1
 shift
 
-if [ $# -eq 0 ]; then
-  usage
+if [ ! -f "$patch" ]; then
+  echo "agent-guard: patch not found: $patch" >&2
   exit 1
 fi
 
-if [ ! -f "$PATCH" ]; then
-  echo "agent-guard: patch file not found: $PATCH" >&2
-  exit 1
-fi
-
-# Empty patch is allowed.
-if [ ! -s "$PATCH" ]; then
+# Empty patch: nothing to reject.
+if [ ! -s "$patch" ]; then
   exit 0
 fi
-
-NUMSTAT="$(git apply --numstat "$PATCH" 2>&1)" || {
-  echo "agent-guard: could not read patch: $PATCH" >&2
-  echo "$NUMSTAT" >&2
-  exit 1
-}
-
-if [ -z "$NUMSTAT" ]; then
-  exit 0
-fi
-
-FORBIDDEN=()
-DISALLOWED=()
 
 is_person_only() {
-  local f="$1"
-  case "$f" in
-    web/src/*|api/src/*|.github/*|.cursor/*|scripts/*)
-      return 0
-      ;;
-    */package.json|package.json|*/package-lock.json|package-lock.json)
-      return 0
-      ;;
-    playwright.config.ts|*/playwright.config.ts)
-      return 0
-      ;;
-    web/cypress.config.ts)
-      return 0
-      ;;
-    a11y-baseline.json|*/a11y-baseline.json)
-      return 0
-      ;;
-    *-snapshots/*|*/-*-snapshots/*)
-      return 0
-      ;;
-    */cypress/screenshots/*|*/cypress/results/*)
-      return 0
-      ;;
-    .env|.env.*|*/.env|*/.env.*)
-      return 0
-      ;;
+  path=$1
+  base=${path##*/}
+
+  case "$path" in
+    web/src|web/src/*|api/src|api/src/*) return 0 ;;
+    .github|.github/*|.cursor|.cursor/*|scripts|scripts/*) return 0 ;;
+    web/cypress.config.ts) return 0 ;;
+    web/cypress/screenshots|web/cypress/screenshots/*) return 0 ;;
+    web/cypress/results|web/cypress/results/*) return 0 ;;
+    web/cypress/videos|web/cypress/videos/*) return 0 ;;
+    .env|.env.*|*/.env|*/.env.*) return 0 ;;
+  esac
+
+  case "$base" in
+    package.json|package-lock.json|playwright.config.ts|a11y-baseline.json) return 0 ;;
+    .env|.env.*) return 0 ;;
+  esac
+
+  # Any *-snapshots/ directory segment (visual baselines, etc.).
+  rest=$path
+  while [ -n "$rest" ]; do
+    seg=${rest%%/*}
+    if [ "$seg" = "$rest" ]; then
+      rest=
+    else
+      rest=${rest#*/}
+    fi
+    case "$seg" in
+      *-snapshots) return 0 ;;
+    esac
+  done
+
+  return 1
+}
+
+# True when $1 contains a glob metacharacter (*, ?, or [).
+has_glob_meta() {
+  case "$1" in
+    *'*'*|*'?'*|*'['*) return 0 ;;
   esac
   return 1
 }
 
-# Return 0 if path matches any allowed shell glob; directory/* patterns match the whole subtree.
-path_allowed() {
-  local f="$1"
+# Path may not use .. to climb out of an allowed prefix.
+path_has_dotdot() {
+  case "$1" in
+    ..|../*|*/..|*/../*) return 0 ;;
+  esac
+  return 1
+}
+
+matches_allowed() {
+  path=$1
   shift
-  local pat
   for pat in "$@"; do
-    case "$f" in
-      $pat)
-        return 0
-        ;;
-    esac
     case "$pat" in
-      */*)
-        if [ "${pat##*/}" = "*" ]; then
-          local prefix="${pat%/*}/"
-          case "$f" in
-            ${prefix}*)
-              return 0
-              ;;
+      */)
+        # Explicit directory allow (no '*', so MSYS will not expand it):
+        # docs/test-plans/ permits only that directory tree.
+        dir=${pat%/}
+        if path_has_dotdot "$path"; then
+          continue
+        fi
+        case "$path" in
+          "$dir"|"$dir"/*) return 0 ;;
+        esac
+        ;;
+      *)
+        if has_glob_meta "$pat"; then
+          # Glob allow: only paths that match this pattern.
+          case "$path" in
+            $pat) return 0 ;;
           esac
+        elif [ "$path" = "$pat" ]; then
+          # Exact allow: only this file. Never a parent-directory fallback.
+          return 0
         fi
         ;;
     esac
@@ -101,42 +107,39 @@ path_allowed() {
   return 1
 }
 
-while IFS= read -r line; do
-  [ -z "$line" ] && continue
-  # numstat: added\tremoved\tpath (path may contain spaces — last field)
-  path="${line##*$'\t'}"
+rejected=""
+rejected_count=0
 
+# git apply --numstat prints: added<TAB>deleted<TAB>path
+# Read path as field 3 onward so names with spaces still work.
+while IFS= read -r line || [ -n "$line" ]; do
+  # Drop CR so Windows git numstat lines still match Unix allow patterns.
+  line=$(printf '%s' "$line" | tr -d '\r')
+  [ -n "$line" ] || continue
+  path=$(printf '%s\n' "$line" | cut -f3-)
+  [ -n "$path" ] || continue
+
+  bad=0
   if is_person_only "$path"; then
-    FORBIDDEN+=("$path")
-    continue
+    bad=1
+  elif [ "$#" -eq 0 ]; then
+    bad=1
+  elif ! matches_allowed "$path" "$@"; then
+    bad=1
   fi
 
-  if ! path_allowed "$path" "$@"; then
-    DISALLOWED+=("$path")
+  if [ "$bad" -eq 1 ]; then
+    rejected="${rejected}${path}"$'\n'
+    rejected_count=$((rejected_count + 1))
   fi
 done <<EOF
-$NUMSTAT
+$(git apply --numstat -- "$patch")
 EOF
 
-err=0
-if [ ${#FORBIDDEN[@]} -gt 0 ]; then
-  err=1
-  echo "agent-guard: patch touches paths only a person may change:" >&2
-  local_i=0
-  while [ "$local_i" -lt ${#FORBIDDEN[@]} ]; do
-    echo "  ${FORBIDDEN[$local_i]}" >&2
-    local_i=$((local_i + 1))
-  done
+if [ "$rejected_count" -gt 0 ]; then
+  echo "agent-guard: refusing files outside the allow-list or reserved for people:" >&2
+  printf '%s' "$rejected" >&2
+  exit 1
 fi
 
-if [ ${#DISALLOWED[@]} -gt 0 ]; then
-  err=1
-  echo "agent-guard: patch touches paths outside allowed patterns:" >&2
-  local_j=0
-  while [ "$local_j" -lt ${#DISALLOWED[@]} ]; do
-    echo "  ${DISALLOWED[$local_j]}" >&2
-    local_j=$((local_j + 1))
-  done
-fi
-
-exit "$err"
+exit 0

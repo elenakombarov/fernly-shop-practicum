@@ -1,4 +1,4 @@
-name: Tests
+name: tests
 
 on:
   push:
@@ -12,42 +12,50 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Pipeline gate checks
+      - name: Prove the pipeline gates
         run: bash scripts/test-gates.sh
 
   cypress:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - run: npm run cy:component -- --reporter junit --reporter-options "mochaFile=cypress/results/component-${{ github.sha }}.xml"
+      - name: Component tests
+        run: >-
+          npm run cy:component --
+          --reporter junit
+          --reporter-options "mochaFile=cypress/results/component-${{ github.sha }}.xml"
 
-      - run: npm run start:web &
-        env:
-          CI: true
+      - name: UI tests
+        run: |
+          npm run start:web &
+          npx --yes wait-on http://localhost:5173
+          npm run cy:ui -- --reporter junit --reporter-options "mochaFile=cypress/results/ui-${{ github.sha }}.xml"
 
-      - run: npx wait-on http://localhost:5173
-
-      - run: npm run cy:ui -- --reporter junit --reporter-options "mochaFile=cypress/results/ui-${{ github.sha }}.xml"
-
-      - uses: actions/upload-artifact@v4
+      - name: Upload Cypress JUnit results
         if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
         with:
           name: cypress-results
           path: web/cypress/results
           if-no-files-found: ignore
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload Cypress screenshots
         if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
         with:
           name: cypress-screenshots
           path: web/cypress/screenshots
@@ -56,21 +64,43 @@ jobs:
   playwright:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: npm
 
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-      - run: npx playwright install --with-deps chromium
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
 
-      - run: npm run test:pw
+      - name: Use the local practice env
+        run: cp .env.example .env
 
-      - uses: actions/upload-artifact@v4
+      # CI=true (set by GitHub Actions) enables the visual project in playwright.config.ts.
+      # Do not pass --update-snapshots here — baselines refresh only via visual-baselines.yml.
+      - name: Playwright tests (API, E2E, a11y, visual)
+        run: npm run test:pw
+
+      - name: Guard against accidental baseline writes
+        if: ${{ always() }}
+        run: |
+          if git status --porcelain tests/visual | grep -q .; then
+            echo "::error::Playwright changed files under tests/visual during CI."
+            echo "Approved Linux baselines must not be updated in the tests workflow."
+            echo "Use the Visual baselines workflow_dispatch job to refresh baselines."
+            git status --porcelain tests/visual
+            exit 1
+          fi
+
+      - name: Upload Playwright reports
         if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
         with:
           name: playwright-reports
           path: |
@@ -79,8 +109,18 @@ jobs:
           retention-days: 30
           if-no-files-found: ignore
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload visual diffs and Playwright traces
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-test-results
+          path: test-results
+          retention-days: 30
+          if-no-files-found: ignore
+
+      - name: Upload accessibility report
         if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
         with:
           name: a11y-report
           path: a11y-report
@@ -99,28 +139,36 @@ jobs:
       issues: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - uses: actions/download-artifact@v4
+      - name: Download Playwright reports
+        uses: actions/download-artifact@v4
         with:
           name: playwright-reports
           path: .
+        continue-on-error: true
 
-      - uses: actions/download-artifact@v4
+      - name: Download Cypress JUnit results
+        uses: actions/download-artifact@v4
         with:
           name: cypress-results
           path: web/cypress/results
+        continue-on-error: true
 
-      - uses: actions/download-artifact@v4
+      - name: Download accessibility report
+        uses: actions/download-artifact@v4
         with:
           name: a11y-report
           path: a11y-report
+        continue-on-error: true
 
       - name: Build QA report
         env:
@@ -140,9 +188,35 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: node scripts/qa-report.mjs publish
 
-      - uses: actions/upload-artifact@v4
+      - name: Build pipeline metrics
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/qa-metrics.mjs build
+
+      - name: Publish pipeline metrics comment
+        if: ${{ github.event_name == 'pull_request' }}
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/qa-metrics.mjs publish
+
+      - name: Upload QA report
         if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
         with:
           name: qa-report
           path: qa-report
           retention-days: 90
+
+      - name: Upload QA metrics doc
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: qa-metrics-doc
+          path: docs/QA-METRICS.md
+          retention-days: 90
+          if-no-files-found: ignore

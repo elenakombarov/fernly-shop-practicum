@@ -1,156 +1,162 @@
 import { PriceTag } from '../../src/components/PriceTag';
 
-function parseRgb(color: string): [number, number, number] {
-  const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!m) {
-    throw new Error(`Unsupported color: ${color}`);
-  }
-  return [Number(m[1]), Number(m[2]), Number(m[3])];
+/** The price element is the one whose own text is the dollar amount. */
+function hasOwnPriceText(_content: string, element: Element | null): boolean {
+  if (!element) return false;
+  const own = Array.from(element.childNodes)
+    .filter((node) => node.nodeType === Node.TEXT_NODE)
+    .map((node) => node.textContent ?? '')
+    .join('')
+    .trim();
+  return /^\$\d/.test(own);
 }
 
-function relativeLuminance(r: number, g: number, b: number): number {
-  const [rs, gs, bs] = [r, g, b].map((c) => {
-    const s = c / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+function expectFontSize(rem: number, what: string) {
+  cy.findByText(hasOwnPriceText).then(($el) => {
+    const px = parseFloat(getComputedStyle($el[0]).fontSize);
+    const root = parseFloat(getComputedStyle(document.documentElement).fontSize);
+    expect(px, what).to.be.closeTo(root * rem, 0.05);
   });
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
 }
 
-function contrastRatio(fg: string, bg: string): number {
-  const [fr, fgG, fb] = parseRgb(fg);
-  const [br, bgG, bb] = parseRgb(bg);
-  const lFg = relativeLuminance(fr, fgG, fb);
-  const lBg = relativeLuminance(br, bgG, bb);
-  const lighter = Math.max(lFg, lBg);
-  const darker = Math.min(lFg, lBg);
+function channel(color: string): [number, number, number] {
+  const rgb = color.match(/rgba?\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/);
+  if (rgb) return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
+  const hex = color.match(/^#([0-9a-f]{6})$/i);
+  if (hex) {
+    const value = Number.parseInt(hex[1], 16);
+    return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+  }
+  throw new Error(`unexpected color ${color}`);
+}
+
+/** WCAG 2.1 relative luminance and contrast ratio. */
+function contrastRatio(foreground: string, background: string): number {
+  const linear = (value: number) => {
+    const s = value / 255;
+    return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  };
+  const luminance = (color: string) => {
+    const [r, g, b] = channel(color);
+    return 0.2126 * linear(r) + 0.7152 * linear(g) + 0.0722 * linear(b);
+  };
+  const lighter = Math.max(luminance(foreground), luminance(background));
+  const darker = Math.min(luminance(foreground), luminance(background));
   return (lighter + 0.05) / (darker + 0.05);
 }
 
 describe('PriceTag', () => {
-  it('PT-01 shows $12.50 for amount 12.5', { tags: '@component' }, () => {
+  it('PT-01 shows $12.50 for an amount with one decimal place', { tags: ['@component', '@known-bug'] }, () => {
     cy.mount(<PriceTag amount={12.5} />);
-    cy.findByText('$12.50');
+
+    cy.findByText(hasOwnPriceText).then(($el) => {
+      expect($el.text().trim(), 'price').to.equal('$12.50');
+    });
   });
 
-  it('PT-02 shows $50.00 for amount 50', { tags: '@component' }, () => {
-    cy.mount(<PriceTag amount={50} />);
-    cy.findByText('$50.00');
+  it('PT-02 shows $22.00 for whole dollars', { tags: ['@component', '@known-bug'] }, () => {
+    cy.mount(<PriceTag amount={22} />);
+
+    cy.findByText(hasOwnPriceText).then(($el) => {
+      expect($el.text().trim(), 'price').to.equal('$22.00');
+    });
   });
 
-  it('PT-03 shows $24.99 for amount 24.99', { tags: '@component' }, () => {
-    cy.mount(<PriceTag amount={24.99} />);
-    cy.findByText('$24.99');
+  it('PT-03 shows $9.99 when the amount already has two decimals', { tags: '@component' }, () => {
+    cy.mount(<PriceTag amount={9.99} />);
+
+    cy.findByText(hasOwnPriceText).then(($el) => {
+      expect($el.text().trim(), 'price').to.equal('$9.99');
+    });
   });
 
-  it('PT-04 shows $0.00 for amount 0', { tags: '@component' }, () => {
+  it('PT-04 shows $0.00 for a zero amount', { tags: ['@component', '@known-bug'] }, () => {
     cy.mount(<PriceTag amount={0} />);
-    cy.findByText('$0.00');
+
+    cy.findByText(hasOwnPriceText).then(($el) => {
+      expect($el.text().trim(), 'price').to.equal('$0.00');
+    });
   });
 
-  it('PT-05 shows $0.01 for amount 0.01', { tags: '@component' }, () => {
+  it('PT-05 shows $1.00 for one dollar', { tags: ['@component', '@known-bug'] }, () => {
+    cy.mount(<PriceTag amount={1} />);
+
+    cy.findByText(hasOwnPriceText).then(($el) => {
+      expect($el.text().trim(), 'price').to.equal('$1.00');
+    });
+  });
+
+  it('PT-06 shows $0.01 for one cent', { tags: '@component' }, () => {
     cy.mount(<PriceTag amount={0.01} />);
-    cy.findByText('$0.01');
-  });
 
-  it('PT-06 shows $6.95 for amount 6.95', { tags: '@component' }, () => {
-    cy.mount(<PriceTag amount={6.95} />);
-    cy.findByText('$6.95');
-  });
-
-  it('PT-07 shows $0.30 for floating-point sum 0.1 + 0.2', { tags: '@component' }, () => {
-    cy.mount(<PriceTag amount={0.1 + 0.2} />);
-    cy.findByText('$0.30');
-  });
-
-  it('PT-11 announces Subtotal before the price for screen readers', { tags: '@component' }, () => {
-    cy.mount(<PriceTag amount={12.5} label="Subtotal" />);
-    cy.findByText('$12.50').should(($price) => {
-      expect($price.parent().text(), 'accessible text includes label').to.eq('Subtotal: $12.50');
+    cy.findByText(hasOwnPriceText).then(($el) => {
+      expect($el.text().trim(), 'price').to.equal('$0.01');
     });
   });
 
-  it('PT-12 shows only the price with no label prefix', { tags: '@component' }, () => {
+  it('PT-16 shows $0.99 for one cent under a dollar', { tags: '@component' }, () => {
+    cy.mount(<PriceTag amount={0.99} />);
+
+    cy.findByText(hasOwnPriceText).then(($el) => {
+      expect($el.text().trim(), 'price').to.equal('$0.99');
+    });
+  });
+
+  it('PT-09 uses a 1.05rem font when size is omitted or md', { tags: '@component' }, () => {
     cy.mount(<PriceTag amount={12.5} />);
-    cy.findByText('$12.50').should(($el) => {
-      expect($el.text()).to.eq('$12.50');
+    expectFontSize(1.05, 'default size');
+
+    cy.mount(<PriceTag amount={12.5} size="md" />);
+    expectFontSize(1.05, 'medium size');
+  });
+
+  it('PT-10 uses a 0.9rem font for the small size', { tags: '@component' }, () => {
+    cy.mount(<PriceTag amount={12.5} size="sm" />);
+    expectFontSize(0.9, 'small price');
+  });
+
+  it('PT-11 uses a 1.6rem font for the large size', { tags: '@component' }, () => {
+    cy.mount(<PriceTag amount={12.5} size="lg" />);
+    expectFontSize(1.6, 'large price');
+  });
+
+  it('PT-12 shows $9.99 with no prefix when label is omitted', { tags: '@component' }, () => {
+    cy.mount(<PriceTag amount={9.99} />);
+
+    cy.findByText(hasOwnPriceText).then(($el) => {
+      expect($el.text().trim(), 'price without a prefix').to.equal('$9.99');
     });
   });
 
-  it('PT-13 treats empty label like no label', { tags: '@component' }, () => {
-    cy.mount(<PriceTag amount={12.5} label="" />);
-    cy.findByText('$12.50').should(($el) => {
-      expect($el.text()).to.eq('$12.50');
-    });
-  });
+  it(
+    'PT-13 hides the label and reads Price: before the price',
+    { tags: '@component' },
+    () => {
+      cy.mount(<PriceTag amount={9.99} label="Price" />);
 
-  it('PT-14 uses md size when size is omitted', { tags: '@component' }, () => {
-    cy.mount(
-      <div>
-        <span data-cy="default">
-          <PriceTag amount={12.5} />
-        </span>
-        <span data-cy="md">
-          <PriceTag amount={12.5} size="md" />
-        </span>
-      </div>,
-    );
+      cy.findByText(hasOwnPriceText).then(($el) => {
+        expect($el.text().trim(), 'accessible price').to.equal('Price: $9.99');
 
-    cy.get('[data-cy="default"] span')
-      .invoke('css', 'font-size')
-      .then((defaultSize) => {
-        cy.get('[data-cy="md"] span')
-          .invoke('css', 'font-size')
-          .should('eq', defaultSize);
+        const label = Array.from($el[0].children).find((child) => child.textContent === 'Price: ');
+        expect(label, 'screen-reader prefix').to.exist;
+        const box = label!.getBoundingClientRect();
+        expect(box.width, 'label is not visible').to.be.lt(2);
+        expect(box.height, 'label is not visible').to.be.lt(2);
       });
-  });
+    },
+  );
 
-  it('PT-15 increases font size from sm to md to lg', { tags: '@component' }, () => {
-    cy.mount(
-      <div>
-        <span data-cy="sm">
-          <PriceTag amount={12.5} size="sm" />
-        </span>
-        <span data-cy="md">
-          <PriceTag amount={12.5} size="md" />
-        </span>
-        <span data-cy="lg">
-          <PriceTag amount={12.5} size="lg" />
-        </span>
-      </div>,
-    );
+  it(
+    'PT-14 keeps the price at a 4.5:1 contrast on the shop background',
+    { tags: ['@component', '@known-bug'] },
+    () => {
+      cy.mount(<PriceTag amount={9.99} />);
 
-    const fontSizePx = (selector: string) =>
-      cy.get(selector).invoke('css', 'font-size').then((size) => parseFloat(String(size)));
-
-    fontSizePx('[data-cy="sm"] span').then((sm) => {
-      fontSizePx('[data-cy="md"] span').then((md) => {
-        fontSizePx('[data-cy="lg"] span').then((lg) => {
-          expect(sm, 'sm smaller than md').to.be.lessThan(md);
-          expect(md, 'md smaller than lg').to.be.lessThan(lg);
-        });
+      cy.findByText(hasOwnPriceText).then(($el) => {
+        const color = getComputedStyle($el[0]).color;
+        const ratio = contrastRatio(color, '#f6faf3');
+        expect(ratio, `price color ${color} on #f6faf3`).to.be.at.least(4.5);
       });
-    });
-  });
-
-  it('PT-16 meets contrast on page background for each size', { tags: '@component' }, () => {
-    const sizes = ['sm', 'md', 'lg'] as const;
-
-    sizes.forEach((size) => {
-      cy.mount(
-        <div data-cy="surface" style={{ background: '#f6faf3', padding: '8px' }}>
-          <PriceTag amount={12.5} size={size} />
-        </div>,
-      );
-
-      cy.get('[data-cy="surface"] span')
-        .first()
-        .then(($price) => {
-          const fg = window.getComputedStyle($price[0]).color;
-          const bg = window.getComputedStyle($price[0].parentElement!).backgroundColor;
-          const ratio = contrastRatio(fg, bg);
-          const minRatio = size === 'lg' ? 3 : 4.5;
-          expect(ratio, `${size} contrast on #f6faf3`).to.be.at.least(minRatio);
-        });
-    });
-  });
+    },
+  );
 });

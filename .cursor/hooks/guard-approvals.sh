@@ -1,94 +1,99 @@
 #!/usr/bin/env bash
+# beforeShellExecution: only a person merges, approves, labels, or reads tokens.
+# Pure bash (3.2+). Reads hook JSON on stdin; always prints permission JSON.
 set -euo pipefail
 
-input=$(cat)
+deny() {
+  # Escape reason for JSON string (backslash and double-quote).
+  reason=$1
+  escaped=$(printf '%s' "Only a person does this: ${reason}" | sed 's/\\/\\\\/g; s/"/\\"/g')
+  printf '%s\n' "{\"permission\":\"deny\",\"user_message\":\"${escaped}\",\"agent_message\":\"${escaped}\"}"
+  exit 0
+}
 
-python3 - "$input" <<'PY'
-import json
-import re
-import sys
+allow() {
+  printf '%s\n' '{"permission":"allow"}'
+  exit 0
+}
 
-payload = json.loads(sys.argv[1])
-command = payload.get("command") or ""
+input=$(cat || true)
 
-ALLOW = {"permission": "allow"}
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+command=""
+PYTHON=""
+if [ -f "${SCRIPT_DIR}/resolve-python.sh" ]; then
+  # shellcheck source=resolve-python.sh
+  source "${SCRIPT_DIR}/resolve-python.sh"
+  PYTHON="$(resolve_python 2>/dev/null || true)"
+fi
+if [ -n "$PYTHON" ]; then
+  command=$(printf '%s' "$input" | "$PYTHON" -c 'import json,sys
+try:
+    print(json.load(sys.stdin).get("command") or "")
+except Exception:
+    print("")' 2>/dev/null || true)
+fi
+if [ -z "$command" ] && [ -n "$input" ]; then
+  # Best-effort: first "command":"..." value (commands with quotes may truncate).
+  command=$(printf '%s' "$input" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -n 1)
+  command=$(printf '%s' "$command" | sed 's/\\n/ /g; s/\\"/"/g; s/\\\\/\\/g')
+fi
 
-PERSON_ONLY_USER = (
-    "This action is restricted to a person (merge, approve, labels, or reading secrets). "
-    "The agent cannot run it."
-)
-PERSON_ONLY_AGENT = (
-    "Shell guard: only a person may merge or approve PRs, add labels, "
-    "or read CURSOR_API_KEY / GH_TOKEN / GITHUB_TOKEN. Do not attempt this command."
-)
+cmd=$(printf '%s' "$command" | tr '\n\r' '  ')
 
+# --- secrets ---
+if printf '%s' "$cmd" | grep -Eq '\$\{?(CURSOR_API_KEY|GH_TOKEN|GITHUB_TOKEN)([:}[:space:]"/]|$)'; then
+  deny "reading CURSOR_API_KEY, GH_TOKEN, or GITHUB_TOKEN"
+fi
 
-def deny() -> None:
-    print(
-        json.dumps(
-            {
-                "permission": "deny",
-                "user_message": PERSON_ONLY_USER,
-                "agent_message": PERSON_ONLY_AGENT,
-            }
-        )
-    )
+# printenv as a command word
+if printf '%s' "$cmd" | grep -Eq '(^|[[:space:]|&;])printenv([[:space:]|&;]|$)'; then
+  deny "printenv"
+fi
 
+# env on its own (dumps the environment). Allow "env VAR=x cmd" / "env -i cmd".
+# A list/pipeline segment that is only env + options/assignments is denied.
+if printf '%s' "$cmd" | grep -Eq '(^|[;&|])[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*env([[:space:]]+(-[^[:space:]]+|[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*))*[[:space:]]*$' \
+  || printf '%s' "$cmd" | grep -Eq '^[[:space:]]*([A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*[[:space:]]+)*env([[:space:]]+(-[^[:space:]]+|[A-Za-z_][A-Za-z0-9_]*=[^[:space:]]*))*[[:space:]]*$'; then
+  deny "env"
+fi
 
-def allow() -> None:
-    print(json.dumps(ALLOW))
+# --- gh: merge, approve, labels ---
+if printf '%s' "$cmd" | grep -Eq '(^|[[:space:]|&;])gh([[:space:]|&;]|$)'; then
+  if printf '%s' "$cmd" | grep -Eq 'gh[[:space:]]+pr[[:space:]]+merge([[:space:]|&;]|$)'; then
+    deny "gh pr merge"
+  fi
 
+  if printf '%s' "$cmd" | grep -Eq 'gh[[:space:]]+pr[[:space:]]+review\b' \
+    && printf '%s' "$cmd" | grep -Eq -- '--approve([[:space:]|=]|$)'; then
+    deny "gh pr review --approve"
+  fi
 
-# gh pr merge
-if re.search(r"\bgh\s+pr\s+merge\b", command):
-    deny()
-    sys.exit(0)
+  if printf '%s' "$cmd" | grep -Eq 'gh[[:space:]]+pr[[:space:]]+edit\b' \
+    && printf '%s' "$cmd" | grep -Eq -- '--add-label([[:space:]|=]|$)'; then
+    deny "gh pr edit --add-label"
+  fi
 
-# gh pr review --approve
-if re.search(r"\bgh\s+pr\s+review\b", command) and re.search(r"(?:^|\s)--approve(?:\s|$|=)", command):
-    deny()
-    sys.exit(0)
+  if printf '%s' "$cmd" | grep -Eq 'gh[[:space:]]+issue[[:space:]]+edit\b' \
+    && printf '%s' "$cmd" | grep -Eq -- '--add-label([[:space:]|=]|$)'; then
+    deny "gh issue edit --add-label"
+  fi
 
-# Label changes
-if re.search(r"\bgh\s+pr\s+edit\b", command) and "--add-label" in command:
-    deny()
-    sys.exit(0)
-if re.search(r"\bgh\s+issue\s+edit\b", command) and "--add-label" in command:
-    deny()
-    sys.exit(0)
-if re.search(r"\bgh\s+label\b", command):
-    deny()
-    sys.exit(0)
-if re.search(r"\bgh\s+api\b", command) and "/labels" in command:
-    deny()
-    sys.exit(0)
+  if printf '%s' "$cmd" | grep -Eq 'gh[[:space:]]+label([[:space:]|&;]|$)'; then
+    deny "gh label"
+  fi
 
-# Merges or reviews via gh api
-if re.search(r"\bgh\s+api\b", command):
-    if re.search(r"/merge", command, re.I) or re.search(r"/reviews", command, re.I):
-        deny()
-        sys.exit(0)
+  if printf '%s' "$cmd" | grep -Eq 'gh[[:space:]]+api\b'; then
+    if printf '%s' "$cmd" | grep -Eq '/labels([[:space:]"?|&;]|$)'; then
+      deny "gh api labels"
+    fi
+    if printf '%s' "$cmd" | grep -Ei '/merges?([[:space:]"?|&;]|$)'; then
+      deny "gh api merge"
+    fi
+    if printf '%s' "$cmd" | grep -Eq '/reviews([[:space:]"?|&;]|$)'; then
+      deny "gh api review"
+    fi
+  fi
+fi
 
-# Environment dumps
-if re.search(r"\bprintenv\b", command):
-    deny()
-    sys.exit(0)
-
-stripped = command.strip()
-if re.match(r"^env\s*$", stripped):
-    deny()
-    sys.exit(0)
-
-# Reading secret env vars
-if re.search(r"\$CURSOR_API_KEY\b|\$\{CURSOR_API_KEY\}", command):
-    deny()
-    sys.exit(0)
-if re.search(r"\$GH_TOKEN\b|\$\{GH_TOKEN\}", command):
-    deny()
-    sys.exit(0)
-if re.search(r"\$GITHUB_TOKEN\b|\$\{GITHUB_TOKEN\}", command):
-    deny()
-    sys.exit(0)
-
-allow()
-PY
+allow

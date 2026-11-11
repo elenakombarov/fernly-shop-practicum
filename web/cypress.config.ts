@@ -10,16 +10,17 @@ export default defineConfig({
     },
     specPattern: 'cypress/component/**/*.cy.tsx',
     supportFile: 'cypress/support/component.tsx',
-    setupNodeEvents(on, config) {
+    setupNodeEvents(_on, config) {
       cypressGrepPlugin(config);
       return config;
     },
   },
+  // UI tests with a mocked API.
   e2e: {
     baseUrl: 'http://localhost:5173',
     specPattern: 'cypress/ui/**/*.cy.ts',
     supportFile: 'cypress/support/ui.ts',
-    setupNodeEvents(on, config) {
+    setupNodeEvents(_on, config) {
       cypressGrepPlugin(config);
       return config;
     },

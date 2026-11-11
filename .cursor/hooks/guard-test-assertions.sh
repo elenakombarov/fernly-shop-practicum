@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-exec python3 "${SCRIPT_DIR}/guard-test-assertions.py"
+# shellcheck source=resolve-python.sh
+source "${SCRIPT_DIR}/resolve-python.sh"
+PYTHON="$(resolve_python)" || {
+  echo "guard-test-assertions: no working Python 3 found" >&2
+  exit 1
+}
+exec "$PYTHON" "${SCRIPT_DIR}/guard-test-assertions.py"

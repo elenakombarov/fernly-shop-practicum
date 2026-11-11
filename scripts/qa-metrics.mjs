@@ -1,17 +1,34 @@
 #!/usr/bin/env node
 /**
- * QA pipeline metrics from GitHub (read-only via gh). Node 22+, no npm dependencies.
+ * QA pipeline metrics from GitHub (read-only via gh) + optional PR metrics comment.
+ * Node 22+, no npm dependencies. Never creates GitHub issues.
  */
-import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawnSync } from 'node:child_process';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  isIssuesDisabledError,
+  repoHasIssuesEnabled,
+} from './github-issues.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT_PATH = path.join(ROOT, 'docs/QA-METRICS.md');
-const MARKER = '<!-- fernly-qa-report -->';
+const REPORT_DIR = path.join(ROOT, 'qa-report');
+const QA_REPORT_MARKER = '<!-- fernly-qa-report -->';
+const METRICS_MARKER = '<!-- fernly-qa-metrics -->';
 const PLAN_REVIEW_RE = /^Plan review:\s*(\d+)\s*\/\s*(\d+)/i;
-const WORKFLOW_FILE = 'pr-triage.yml';
+const TRIAGE_WORKFLOW = 'pr-triage.yml';
+const TESTS_WORKFLOW = 'tests.yml';
+
+function env(name, fallback = '') {
+  return process.env[name]?.trim() || fallback;
+}
 
 function gh(args, { input } = {}) {
   const result = execFileSync('gh', args, {
@@ -32,7 +49,7 @@ function ghApiJson(route) {
 }
 
 function resolveRepo() {
-  const fromEnv = process.env.GITHUB_REPOSITORY?.trim();
+  const fromEnv = env('GITHUB_REPOSITORY');
   if (fromEnv) return fromEnv;
   return ghJson(['repo', 'view', '--json', 'nameWithOwner']).nameWithOwner;
 }
@@ -43,8 +60,8 @@ function isBotLogin(login) {
   return login.endsWith('[bot]');
 }
 
-function bodyStartsWithQAReport(body) {
-  return String(body ?? '').trimStart().startsWith(MARKER);
+function bodyStartsWithMarker(body, marker) {
+  return String(body ?? '').trimStart().startsWith(marker);
 }
 
 function minutesBetween(isoStart, isoEnd) {
@@ -78,6 +95,10 @@ function escapeMdCell(text) {
   return String(text ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');
 }
 
+function stableIso(date = new Date()) {
+  return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
 /** @param {string} repo @param {number} prNumber */
 function fetchIssueComments(repo, prNumber) {
   const out = [];
@@ -89,6 +110,7 @@ function fetchIssueComments(repo, prNumber) {
     if (!Array.isArray(chunk) || chunk.length === 0) break;
     for (const c of chunk) {
       out.push({
+        id: c.id,
         login: c.user?.login ?? '',
         createdAt: c.created_at,
         body: c.body ?? '',
@@ -116,7 +138,8 @@ function parsePlanReview(comments) {
 function firstPlanCommentAt(comments) {
   for (const c of comments) {
     if (!isBotLogin(c.login)) continue;
-    if (bodyStartsWithQAReport(c.body)) continue;
+    if (bodyStartsWithMarker(c.body, QA_REPORT_MARKER)) continue;
+    if (bodyStartsWithMarker(c.body, METRICS_MARKER)) continue;
     return c.createdAt;
   }
   return null;
@@ -124,52 +147,100 @@ function firstPlanCommentAt(comments) {
 
 function firstQaReportAt(comments) {
   for (const c of comments) {
-    if (bodyStartsWithQAReport(c.body)) return c.createdAt;
+    if (bodyStartsWithMarker(c.body, QA_REPORT_MARKER)) return c.createdAt;
   }
   return null;
 }
 
-/** @param {string} repo @param {string} branch */
-function agentMinutesForBranch(repo, branch) {
+function workflowMinutesForBranch(repo, workflowFile, branch) {
   const runs = ghJson([
     'run',
     'list',
     '--repo',
     repo,
     '--workflow',
-    WORKFLOW_FILE,
+    workflowFile,
     '--branch',
     branch,
     '--limit',
     '200',
     '--json',
-    'status,conclusion,createdAt,updatedAt',
+    'status,conclusion,createdAt,updatedAt,databaseId,url,name',
   ]);
   let totalMin = 0;
+  let completed = 0;
+  let failed = 0;
+  let latest = null;
   for (const run of runs ?? []) {
+    if (!latest) latest = run;
     if (run.status !== 'completed') continue;
+    completed += 1;
+    if (run.conclusion === 'failure') failed += 1;
     const d = minutesBetween(run.createdAt, run.updatedAt);
     if (d != null) totalMin += d;
   }
-  return round1(totalMin);
+  return {
+    totalMin: round1(totalMin),
+    completed,
+    failed,
+    latest,
+  };
 }
 
-/** @param {string} repo */
+function artifactNamesForRun(repo, runId) {
+  if (!runId) return [];
+  try {
+    const data = ghApiJson(
+      `repos/${repo}/actions/runs/${runId}/artifacts?per_page=100`,
+    );
+    return (data.artifacts ?? []).map((a) => a.name).sort();
+  } catch {
+    return [];
+  }
+}
+
 function loadQaFindings(repo) {
-  return ghJson([
-    'issue',
-    'list',
-    '--repo',
-    repo,
-    '--label',
-    'qa-finding',
-    '--state',
-    'all',
-    '--limit',
-    '500',
-    '--json',
-    'number,body,state,stateReason',
-  ]);
+  try {
+    if (!repoHasIssuesEnabled(repo)) {
+      console.log(
+        'GitHub Issues are disabled for this repository — skipping qa-finding issue metrics.',
+      );
+      return [];
+    }
+  } catch (err) {
+    if (isIssuesDisabledError(err)) {
+      console.log(
+        'GitHub Issues are disabled for this repository — skipping qa-finding issue metrics.',
+      );
+      return [];
+    }
+    throw err;
+  }
+
+  try {
+    return ghJson([
+      'issue',
+      'list',
+      '--repo',
+      repo,
+      '--label',
+      'qa-finding',
+      '--state',
+      'all',
+      '--limit',
+      '500',
+      '--json',
+      'number,body,state,stateReason',
+    ]);
+  } catch (err) {
+    if (isIssuesDisabledError(err)) {
+      console.log(
+        'GitHub Issues are disabled for this repository — skipping qa-finding issue metrics.',
+      );
+      return [];
+    }
+    throw err;
+  }
 }
 
 function issueLinksToPr(body, repo, prNumber) {
@@ -192,7 +263,17 @@ function findingsForPr(allIssues, repo, prNumber) {
   return { findings: linked.length, falseAlarms };
 }
 
-function buildMarkdown(repo, rows) {
+function readLocalRunJson() {
+  const p = path.join(REPORT_DIR, 'run.json');
+  if (!existsSync(p)) return null;
+  try {
+    return JSON.parse(readFileSync(p, 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+function buildMarkdown(repo, rows, generatedAt) {
   let sumRight = 0;
   let sumReviewed = 0;
   let sumFindings = 0;
@@ -208,7 +289,7 @@ function buildMarkdown(repo, rows) {
   const lines = [];
   lines.push('# QA pipeline metrics', '');
   lines.push(
-    `Repo: \`${repo}\`. Generated ${new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')} by \`node scripts/qa-metrics.mjs\` (read-only; uses \`gh\` only).`,
+    `Repo: \`${repo}\`. Generated ${generatedAt} by \`node scripts/qa-metrics.mjs\` (read-only collection; uses \`gh\` only; never opens issues).`,
     '',
   );
   lines.push(
@@ -221,8 +302,8 @@ function buildMarkdown(repo, rows) {
   );
 
   lines.push(
-    '| PR | Branch | Plan rows (right/reviewed) | Min to first plan comment | Min to first QA report | Agent min (pr-triage) | Findings | False alarms |',
-    '| --- | --- | --- | ---: | ---: | ---: | ---: | ---: |',
+    '| PR | Branch | Plan review | CI status | Tests min | Triage min | Artifacts | Findings | False alarms |',
+    '| --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: |',
   );
 
   for (const r of rows) {
@@ -231,22 +312,24 @@ function buildMarkdown(repo, rows) {
       r.rowsRight != null && r.rowsReviewed != null
         ? `${r.rowsRight}/${r.rowsReviewed}`
         : '—';
+    const artifacts = r.artifacts?.length ? r.artifacts.join(', ') : '—';
     lines.push(
-      `| ${prCell} | ${escapeMdCell(r.branch)} | ${planCell} | ${fmtMin(r.minToPlan)} | ${fmtMin(r.minToQaReport)} | ${fmtMin(r.agentMin)} | ${fmtInt(r.findings)} | ${fmtInt(r.falseAlarms)} |`,
+      `| ${prCell} | ${escapeMdCell(r.branch)} | ${planCell} | ${escapeMdCell(r.ciStatus)} | ${fmtMin(r.testsMin)} | ${fmtMin(r.agentMin)} | ${escapeMdCell(artifacts)} | ${fmtInt(r.findings)} | ${fmtInt(r.falseAlarms)} |`,
     );
   }
 
   if (!rows.length) {
-    lines.push('| — | — | — | — | — | — | — | — |');
+    lines.push('| — | — | — | — | — | — | — | — | — |');
   }
 
   lines.push('', '## How each number is measured', '');
   lines.push(
     '- **Pull requests:** every open or closed PR with the `plan-approved` label (`gh pr list --label plan-approved --state all`).',
-    '- **Plan rows (right/reviewed):** the last issue comment on that PR from a human (non-bot) author whose body starts with `Plan review: N/M`.',
-    `- **Min to first plan comment:** minutes from PR \`createdAt\` to the first issue comment by GitHub Actions that is not a QA report (body does not start with \`${MARKER}\`).`,
-    `- **Min to first QA report:** minutes from PR \`createdAt\` to the first issue comment whose body starts with \`${MARKER}\`.`,
-    `- **Agent min:** sum of wall-clock minutes for completed \`${WORKFLOW_FILE}\` workflow runs on the PR head branch (\`updatedAt − createdAt\` per run).`,
+    '- **Plan review:** the last issue comment on that PR from a human (non-bot) author whose body starts with `Plan review: N/M` (shown as `N/M`).',
+    '- **CI status:** conclusion of the latest `tests.yml` run on the PR head branch (`success` / `failure` / `cancelled` / `—`).',
+    '- **Tests min:** sum of wall-clock minutes for completed `tests.yml` runs on the PR head branch.',
+    `- **Triage min:** sum of wall-clock minutes for completed \`${TRIAGE_WORKFLOW}\` runs on the PR head branch.`,
+    '- **Artifacts:** artifact names attached to the latest `tests.yml` run when available.',
     '- **Findings:** open or closed issues labeled `qa-finding` whose body links to that pull request.',
     '- **False alarms:** those findings that are closed with GitHub state reason **not planned** (`NOT_PLANNED`).',
     '- **Routing accuracy:** Σ plan rows right ÷ Σ plan rows reviewed across labeled PRs.',
@@ -257,10 +340,59 @@ function buildMarkdown(repo, rows) {
   return `${lines.join('\n')}\n`;
 }
 
-function main() {
-  const dryRun = process.argv.includes('--dry-run');
-  const repo = resolveRepo();
+function buildPrComment({ repo, row, localRun, runUrl, generatedAt }) {
+  const lines = [METRICS_MARKER, '', '## QA pipeline metrics', ''];
+  if (runUrl) lines.push(`[Workflow run](${runUrl})`, '');
 
+  const plan =
+    row.rowsRight != null && row.rowsReviewed != null
+      ? `${row.rowsRight}/${row.rowsReviewed}`
+      : '—';
+  lines.push(`Plan review: ${plan}`, '');
+
+  lines.push(
+    '| Metric | Value |',
+    '| --- | --- |',
+    `| PR | [#${row.number}](${row.url}) |`,
+    `| Branch | \`${row.branch}\` |`,
+    `| CI status (latest tests.yml) | ${row.ciStatus} |`,
+    `| Tests workflow minutes (sum) | ${fmtMin(row.testsMin)} |`,
+    `| Triage workflow minutes (sum) | ${fmtMin(row.agentMin)} |`,
+    `| Min to first plan comment | ${fmtMin(row.minToPlan)} |`,
+    `| Min to first QA report | ${fmtMin(row.minToQaReport)} |`,
+    `| Artifacts | ${row.artifacts?.length ? row.artifacts.join(', ') : '—'} |`,
+    `| Findings linked to PR | ${fmtInt(row.findings)} |`,
+    `| False alarms | ${fmtInt(row.falseAlarms)} |`,
+  );
+
+  if (localRun?.totals) {
+    lines.push('', '### Current run test totals', '');
+    lines.push(
+      '| Suite | Passed | Failed | Known bugs | Skipped | Status |',
+      '| --- | ---: | ---: | ---: | ---: | --- |',
+    );
+    for (const [name, t] of Object.entries(localRun.totals)) {
+      lines.push(
+        `| ${name} | ${t.passed ?? '—'} | ${t.failed ?? '—'} | ${t.knownBugs ?? '—'} | ${t.skipped ?? '—'} | ${t.status} |`,
+      );
+    }
+    lines.push('');
+    lines.push(
+      `Failed: **${localRun.failed ?? 0}** | Known bugs: **${localRun.knownBugs ?? 0}** | Visual changes: **${localRun.visualChanges ?? 0}** | Findings in branch: **${localRun.findings ?? 0}**`,
+      '',
+    );
+  }
+
+  lines.push(
+    '_Generated by `scripts/qa-metrics.mjs`. This comment is updated in place and does not create issues._',
+    '',
+    `Repo: \`${repo}\` | ${generatedAt}`,
+    '',
+  );
+  return lines.join('\n');
+}
+
+function collectLiveRows(repo) {
   const prs = ghJson([
     'pr',
     'list',
@@ -288,6 +420,10 @@ function main() {
       repo,
       pr.number,
     );
+    const triage = workflowMinutesForBranch(repo, TRIAGE_WORKFLOW, pr.headRefName);
+    const tests = workflowMinutesForBranch(repo, TESTS_WORKFLOW, pr.headRefName);
+    const latestTests = tests.latest;
+    const artifacts = artifactNamesForRun(repo, latestTests?.databaseId);
 
     return {
       number: pr.number,
@@ -298,24 +434,213 @@ function main() {
       rowsReviewed,
       minToPlan: round1(minutesBetween(pr.createdAt, planAt)),
       minToQaReport: round1(minutesBetween(pr.createdAt, qaAt)),
-      agentMin: agentMinutesForBranch(repo, pr.headRefName),
+      agentMin: triage.totalMin,
+      testsMin: tests.totalMin,
+      ciStatus: latestTests?.conclusion ?? latestTests?.status ?? '—',
+      artifacts,
       findings,
       falseAlarms,
     };
   });
 
   rows.sort((a, b) => a.number - b.number);
+  return rows;
+}
 
-  const md = buildMarkdown(repo, rows);
+function loadFixture(fixtureDir) {
+  const data = JSON.parse(
+    readFileSync(path.join(fixtureDir, 'metrics-source.json'), 'utf8'),
+  );
+  return {
+    repo: data.repo,
+    generatedAt: data.generatedAt ?? '2026-01-01T00:00:00Z',
+    rows: data.rows,
+    localRun: data.localRun ?? null,
+    runUrl: data.runUrl ?? '',
+    focusPr: data.focusPr ?? data.rows?.[0]?.number ?? null,
+  };
+}
 
-  if (dryRun) {
-    process.stdout.write(md);
+function writeOutputs({ repo, rows, generatedAt, localRun, runUrl, focusPr }) {
+  const md = buildMarkdown(repo, rows, generatedAt);
+  mkdirSync(path.dirname(OUT_PATH), { recursive: true });
+  writeFileSync(OUT_PATH, md, 'utf8');
+
+  mkdirSync(REPORT_DIR, { recursive: true });
+  const focus =
+    rows.find((r) => r.number === Number(focusPr)) ?? rows[0] ?? null;
+  const comment = focus
+    ? buildPrComment({ repo, row: focus, localRun, runUrl, generatedAt })
+    : `${METRICS_MARKER}\n\n## QA pipeline metrics\n\n_No plan-approved PRs found._\n`;
+  writeFileSync(path.join(REPORT_DIR, 'metrics-comment.md'), comment, 'utf8');
+
+  const metricsJson = {
+    repo,
+    generatedAt,
+    focusPr: focus?.number ?? null,
+    planReview:
+      focus?.rowsRight != null && focus?.rowsReviewed != null
+        ? `Plan review: ${focus.rowsRight}/${focus.rowsReviewed}`
+        : 'Plan review: —',
+    rows,
+    localRun,
+  };
+  writeFileSync(
+    path.join(REPORT_DIR, 'metrics.json'),
+    JSON.stringify(metricsJson, null, 2),
+    'utf8',
+  );
+
+  console.log(`Wrote ${OUT_PATH} (${rows.length} PR(s))`);
+  console.log(`Wrote ${path.join(REPORT_DIR, 'metrics-comment.md')}`);
+  console.log(`Wrote ${path.join(REPORT_DIR, 'metrics.json')}`);
+  return { comment, metricsJson };
+}
+
+function publishMetricsComment({ dryRun = false } = {}) {
+  const repo = env('GITHUB_REPOSITORY') || resolveRepo();
+  const pr = env('PR_NUMBER');
+  if (!pr) {
+    console.log('No PR_NUMBER — skipping metrics publish (docs-only run).');
     return;
   }
 
-  mkdirSync(path.dirname(OUT_PATH), { recursive: true });
-  writeFileSync(OUT_PATH, md, 'utf8');
-  console.log(`Wrote ${OUT_PATH} (${rows.length} PR(s))`);
+  const commentPath = path.join(REPORT_DIR, 'metrics-comment.md');
+  if (!existsSync(commentPath)) {
+    console.error('Missing qa-report/metrics-comment.md — run build first');
+    process.exit(2);
+  }
+  const commentBody = readFileSync(commentPath, 'utf8');
+  if (!commentBody.trimStart().startsWith(METRICS_MARKER)) {
+    console.error('metrics-comment.md missing metrics marker');
+    process.exit(2);
+  }
+
+  // Never touch issues — only PR comments, and never the QA report marker.
+  const listArgs = [
+    'api',
+    `repos/${repo}/issues/${pr}/comments?per_page=100`,
+  ];
+  if (dryRun) {
+    console.log('[dry-run] gh', listArgs.join(' '));
+  }
+  const listed = dryRun
+    ? { stdout: '[]', status: 0 }
+    : spawnSync('gh', listArgs, { encoding: 'utf8' });
+  if (!dryRun && listed.status !== 0) {
+    process.exit(listed.status ?? 1);
+  }
+
+  const comments = JSON.parse(listed.stdout || '[]');
+  const existing = comments.find((c) =>
+    bodyStartsWithMarker(c.body, METRICS_MARKER),
+  );
+  const qaReport = comments.find((c) =>
+    bodyStartsWithMarker(c.body, QA_REPORT_MARKER),
+  );
+
+  if (existing) {
+    const editArgs = [
+      'api',
+      '--method',
+      'PATCH',
+      '-H',
+      'Accept: application/vnd.github+json',
+      `/repos/${repo}/issues/comments/${existing.id}`,
+      '--input',
+      '-',
+    ];
+    if (dryRun) {
+      console.log(`[dry-run] update metrics comment ${existing.id}`);
+    } else {
+      const r = spawnSync('gh', editArgs, {
+        input: JSON.stringify({ body: commentBody }),
+        encoding: 'utf8',
+        stdio: ['pipe', 'inherit', 'inherit'],
+      });
+      if (r.status !== 0) process.exit(r.status ?? 1);
+    }
+  } else {
+    const createArgs = [
+      'pr',
+      'comment',
+      pr,
+      '--repo',
+      repo,
+      '--body-file',
+      commentPath,
+    ];
+    if (dryRun) {
+      console.log('[dry-run] gh', createArgs.join(' '));
+    } else {
+      const r = spawnSync('gh', createArgs, {
+        encoding: 'utf8',
+        stdio: 'inherit',
+      });
+      if (r.status !== 0) process.exit(r.status ?? 1);
+    }
+  }
+
+  console.log(
+    qaReport
+      ? 'Preserved existing QA report comment; metrics comment updated separately.'
+      : 'No QA report comment present yet; metrics comment published alone.',
+  );
+}
+
+function usage() {
+  console.error(
+    'Usage: node scripts/qa-metrics.mjs build [--fixture <dir>] | publish [--dry-run]',
+  );
+  process.exit(2);
+}
+
+function main() {
+  const args = process.argv.slice(2);
+  const cmd = args[0];
+  if (cmd !== 'build' && cmd !== 'publish') usage();
+
+  if (cmd === 'publish') {
+    publishMetricsComment({ dryRun: args.includes('--dry-run') });
+    return;
+  }
+
+  const fixtureIdx = args.indexOf('--fixture');
+  if (fixtureIdx !== -1) {
+    const fixtureDir = path.resolve(args[fixtureIdx + 1] || '');
+    if (!fixtureDir || !existsSync(fixtureDir)) {
+      console.error('Missing --fixture directory');
+      process.exit(2);
+    }
+    const data = loadFixture(fixtureDir);
+    writeOutputs({
+      repo: data.repo,
+      rows: data.rows,
+      generatedAt: data.generatedAt,
+      localRun: data.localRun,
+      runUrl: data.runUrl,
+      focusPr: data.focusPr,
+    });
+    return;
+  }
+
+  const repo = resolveRepo();
+  const generatedAt = stableIso();
+  const rows = collectLiveRows(repo);
+  const localRun = readLocalRunJson();
+  const runUrl =
+    env('GITHUB_REPOSITORY') && env('GITHUB_RUN_ID')
+      ? `https://github.com/${env('GITHUB_REPOSITORY')}/actions/runs/${env('GITHUB_RUN_ID')}`
+      : '';
+  const focusPr = env('PR_NUMBER') ? Number(env('PR_NUMBER')) : null;
+  writeOutputs({
+    repo,
+    rows,
+    generatedAt,
+    localRun,
+    runUrl,
+    focusPr,
+  });
 }
 
 main();

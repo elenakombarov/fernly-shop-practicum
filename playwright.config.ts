@@ -1,10 +1,14 @@
-import dotenv from 'dotenv';
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
 
 dotenv.config();
 
-const apiURL = process.env.API_URL ?? 'http://localhost:8100';
-const webURL = process.env.WEB_URL ?? 'http://localhost:5173';
+const apiURL = process.env.API_URL;
+const webURL = process.env.WEB_URL;
+
+if (!apiURL || !webURL) {
+  throw new Error('API_URL and WEB_URL must be set. Copy .env.example to .env.');
+}
 
 const visualProject =
   process.env.CI || process.env.VISUAL
@@ -39,7 +43,7 @@ export default defineConfig({
       './tests/a11y/reporter.ts',
       {
         outputFolder: 'a11y-report',
-        baseline: 'tests/a11y/a11y-baseline.json',
+        baseline: 'a11y-baseline.json',
         title: 'Fernly accessibility',
       },
     ],
@@ -64,21 +68,21 @@ export default defineConfig({
     },
     {
       name: 'api',
-      testMatch: /api\/.*\.spec\.ts/,
-      use: { baseURL: apiURL },
+      testDir: 'tests/api',
       dependencies: ['setup'],
+      use: { baseURL: apiURL },
     },
     {
       name: 'e2e',
-      testMatch: /e2e\/.*\.spec\.ts/,
-      use: { baseURL: webURL },
+      testDir: 'tests/e2e',
       dependencies: ['setup'],
+      use: { baseURL: webURL },
     },
     {
       name: 'a11y',
-      testMatch: /a11y\/.*\.spec\.ts/,
-      use: { baseURL: webURL },
+      testDir: 'tests/a11y',
       dependencies: ['setup'],
+      use: { baseURL: webURL },
     },
     ...visualProject,
   ],

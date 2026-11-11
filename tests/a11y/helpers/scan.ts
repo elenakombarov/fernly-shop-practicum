@@ -1,101 +1,112 @@
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, TestInfo } from '@playwright/test';
-import type { ImpactValue, IncompleteResult, Result, UnlabelledFrameSelector } from 'axe-core';
+import type axe from 'axe-core';
 import {
-  classifyViolationElement,
-  isBlockingViolation,
+  classifyElements,
+  isBlocking,
   loadBaseline,
-  serializeAxeTarget,
-  type ClassifiedA11yElement,
-} from '../baseline.js';
+  todayStamp,
+  type ClassifiedElement,
+  type Impact,
+  type ViolationElement,
+} from '../baseline';
 
-const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] as const;
+export interface PageScan {
+  elements: ClassifiedElement[];
+  blocking: ClassifiedElement[];
+}
 
-export type AxeResultsAttachment = {
+interface ScanOptions {
+  name: string;
+}
+
+interface AxeScanReport {
   page: string;
   url: string;
   scannedAt: string;
-  violations: Result[];
-  passes: Result[];
-  incomplete: IncompleteResult[];
-};
-
-export type ScanPageResult = {
-  classified: ClassifiedA11yElement[];
-  blocking: ClassifiedA11yElement[];
-};
-
-function targetLocator(page: Page, target: UnlabelledFrameSelector) {
-  const selector = serializeAxeTarget(target);
-  if (!selector) return null;
-  return page.locator(selector).first();
+  violations: axe.Result[];
+  passes: axe.Result[];
+  incomplete: axe.Result[];
 }
 
-export async function scanPage(
+const tags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
+
+function readImpact(value: axe.ImpactValue | undefined): Impact | undefined {
+  if (value === 'minor' || value === 'moderate' || value === 'serious' || value === 'critical') {
+    return value;
+  }
+  return undefined;
+}
+
+function selectorPart(part: axe.CrossTreeSelector): string {
+  return typeof part === 'string' ? part : part.join(' >> ');
+}
+
+function elementTarget(target: axe.UnlabelledFrameSelector): string {
+  return target.map((part) => selectorPart(part)).join(' >> ');
+}
+
+function violationElements(pageName: string, violations: readonly axe.Result[]): ViolationElement[] {
+  const elements: ViolationElement[] = [];
+  for (const violation of violations) {
+    for (const node of violation.nodes) {
+      elements.push({
+        rule: violation.id,
+        page: pageName,
+        target: elementTarget(node.target),
+        impact: readImpact(node.impact) ?? readImpact(violation.impact) ?? null,
+      });
+    }
+  }
+  return elements;
+}
+
+async function attachShots(
   page: Page,
   testInfo: TestInfo,
-  options: { name: string },
-): Promise<ScanPageResult> {
-  const baseline = loadBaseline();
-  const axeResults = await new AxeBuilder({ page }).withTags([...AXE_TAGS]).analyze();
+  pageName: string,
+  violations: readonly axe.Result[],
+): Promise<void> {
+  for (const violation of violations) {
+    const nodes = violation.nodes.slice(0, 3);
+    for (const [index, node] of nodes.entries()) {
+      const target = elementTarget(node.target);
+      if (target.length === 0) continue;
+      const shot = await page.locator(target).first().screenshot();
+      await testInfo.attach(`axe-shot:${pageName}:${violation.id}:${index}`, {
+        body: shot,
+        contentType: 'image/png',
+      });
+    }
+  }
+}
 
-  const attachmentPayload: AxeResultsAttachment = {
+export async function scanPage(page: Page, testInfo: TestInfo, options: ScanOptions): Promise<PageScan> {
+  const results = await new AxeBuilder({ page }).withTags(tags).analyze();
+  const scannedAt = new Date().toISOString();
+
+  await attachShots(page, testInfo, options.name, results.violations);
+
+  const report: AxeScanReport = {
     page: options.name,
     url: page.url(),
-    scannedAt: new Date().toISOString(),
-    violations: axeResults.violations,
-    passes: axeResults.passes,
-    incomplete: axeResults.incomplete,
+    scannedAt,
+    violations: results.violations,
+    passes: results.passes,
+    incomplete: results.incomplete,
   };
-
   await testInfo.attach('axe-results', {
-    body: Buffer.from(JSON.stringify(attachmentPayload, null, 2), 'utf8'),
+    body: JSON.stringify(report),
     contentType: 'application/json',
   });
 
-  const shotCounts = new Map<string, number>();
-
-  for (const violation of axeResults.violations) {
-    for (const node of violation.nodes) {
-      const index = shotCounts.get(violation.id) ?? 0;
-      if (index < 3) {
-        const locator = targetLocator(page, node.target);
-        if (locator) {
-          try {
-            const screenshot = await locator.screenshot({ timeout: 5_000 });
-            await testInfo.attach(`axe-shot:${options.name}:${violation.id}:${index}`, {
-              body: screenshot,
-              contentType: 'image/png',
-            });
-          } catch {
-            // Element may be hidden or detached; skip screenshot for this node.
-          }
-        }
-        shotCounts.set(violation.id, index + 1);
-      }
-    }
-  }
-
-  const classified: ClassifiedA11yElement[] = [];
-
-  for (const violation of axeResults.violations) {
-    const impact = (violation.impact ?? null) as ImpactValue;
-    for (const node of violation.nodes) {
-      classified.push(
-        classifyViolationElement(
-          options.name,
-          violation.id,
-          (node.impact ?? impact) as ImpactValue,
-          node.target,
-          node.html,
-          node.failureSummary,
-          baseline,
-        ),
-      );
-    }
-  }
-
-  const blocking = classified.filter(isBlockingViolation);
-
-  return { classified, blocking };
+  const elements = classifyElements(
+    violationElements(options.name, results.violations),
+    loadBaseline(),
+    todayStamp(),
+  );
+  return {
+    elements,
+    blocking: elements.filter(isBlocking),
+  };
 }

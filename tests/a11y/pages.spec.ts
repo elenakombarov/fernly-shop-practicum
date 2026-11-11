@@ -1,49 +1,88 @@
-import { expect, test } from '@playwright/test';
-import { formatBlockingViolations } from './baseline.js';
-import { scanPage } from './helpers/scan.js';
-import { signInFirstCustomerWithCartLine, signOutInBrowser } from './helpers/session.js';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
+import type { ClassifiedElement } from './baseline';
+import { scanPage } from './helpers/scan';
 
-test('Browse', { tag: '@a11y' }, async ({ page }, testInfo) => {
-  await signOutInBrowser(page);
-  await page.goto('/');
-  await expect(page.getByRole('heading', { level: 2, name: /\d+ plants/ })).toBeVisible();
+function listBlocking(blocking: readonly ClassifiedElement[]): string {
+  return blocking
+    .map((item) =>
+      [item.page, item.status, item.impact ?? 'none', item.rule, item.target].join(' '),
+    )
+    .join('\n');
+}
 
-  const { blocking } = await scanPage(page, testInfo, { name: 'Browse' });
-  expect(blocking, formatBlockingViolations(blocking)).toHaveLength(0);
-});
+async function expectNoBlocking(page: Page, testInfo: TestInfo, name: string): Promise<void> {
+  const { blocking } = await scanPage(page, testInfo, { name });
+  expect(blocking, listBlocking(blocking) || 'no blocking accessibility violations').toEqual([]);
+}
 
-test('Plant', { tag: '@a11y' }, async ({ page }, testInfo) => {
-  await signOutInBrowser(page);
-  await page.goto('/plants/pl-monstera');
-  await expect(page.getByRole('heading', { level: 1, name: 'Monstera Deliciosa' })).toBeVisible();
+function requiredEnv(name: string): string {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} must be set`);
+  return value;
+}
 
-  const { blocking } = await scanPage(page, testInfo, { name: 'Plant' });
-  expect(blocking, formatBlockingViolations(blocking)).toHaveLength(0);
-});
-
-test('Sign in', { tag: '@a11y' }, async ({ page }, testInfo) => {
-  await signOutInBrowser(page);
+async function signIn(page: Page): Promise<void> {
   await page.goto('/login');
-  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  await page.getByLabel('Email').fill(requiredEnv('FERNLY_USER_EMAIL'));
+  await page.getByLabel('Password').fill(requiredEnv('FERNLY_USER_PASSWORD'));
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+}
 
-  const { blocking } = await scanPage(page, testInfo, { name: 'Sign in' });
-  expect(blocking, formatBlockingViolations(blocking)).toHaveLength(0);
-});
+async function emptyCart(page: Page): Promise<void> {
+  await page.goto('/cart');
+  await expect(page.getByRole('heading', { name: /Your cart/ })).toBeVisible();
+  const remove = page.getByRole('button', { name: /^Remove / });
+  let remaining = await remove.count();
+  while (remaining > 0) {
+    await remove.first().click();
+    await expect(remove).toHaveCount(remaining - 1);
+    remaining -= 1;
+  }
+}
 
-test('Cart', { tag: '@a11y' }, async ({ page, request }, testInfo) => {
-  await signInFirstCustomerWithCartLine(page, request);
+async function signInWithOnePlant(page: Page): Promise<void> {
+  await signIn(page);
+  await emptyCart(page);
+  await page.goto('/plants/pl-monstera');
+  await page.getByRole('button', { name: 'Add to cart' }).click();
+  await expect(page.getByText(/Added 1 × .+ to your cart\./)).toBeVisible();
   await page.goto('/cart');
   await expect(page.getByRole('heading', { name: 'Your cart' })).toBeVisible();
+  await expect(page.getByRole('button', { name: /^Remove / })).toHaveCount(1);
+}
 
-  const { blocking } = await scanPage(page, testInfo, { name: 'Cart' });
-  expect(blocking, formatBlockingViolations(blocking)).toHaveLength(0);
+test('Browse has no blocking accessibility violations', { tag: '@a11y' }, async ({ page }, testInfo) => {
+  test.fail(true, 'F-08/F-09/F-11: Browse has blocking color-contrast, label, and button-name violations');
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: /^\d+ plants$/ })).toBeVisible();
+  await expectNoBlocking(page, testInfo, 'Browse');
 });
 
-test('Checkout', { tag: '@a11y' }, async ({ page, request }, testInfo) => {
-  await signInFirstCustomerWithCartLine(page, request);
+test('Plant has no blocking accessibility violations', { tag: '@a11y' }, async ({ page }, testInfo) => {
+  test.fail(true, 'F-08/F-12: Plant has blocking color-contrast and image-alt violations');
+  await page.goto('/plants/pl-monstera');
+  await expect(page.getByRole('button', { name: /^(Add to cart|Out of stock)$/ })).toBeVisible();
+  await expectNoBlocking(page, testInfo, 'Plant');
+});
+
+test('Sign in has no blocking accessibility violations', { tag: '@a11y' }, async ({ page }, testInfo) => {
+  await page.goto('/login');
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  await expect(page.getByLabel('Email')).toBeVisible();
+  await expectNoBlocking(page, testInfo, 'Sign in');
+});
+
+test('Cart has no blocking accessibility violations', { tag: '@a11y' }, async ({ page }, testInfo) => {
+  await signInWithOnePlant(page);
+  await expectNoBlocking(page, testInfo, 'Cart');
+});
+
+test('Checkout has no blocking accessibility violations', { tag: '@a11y' }, async ({ page }, testInfo) => {
+  test.fail(true, 'F-08: Checkout has blocking color-contrast violations on prices');
+  await signInWithOnePlant(page);
   await page.goto('/checkout');
   await expect(page.getByRole('heading', { name: 'Checkout' })).toBeVisible();
-
-  const { blocking } = await scanPage(page, testInfo, { name: 'Checkout' });
-  expect(blocking, formatBlockingViolations(blocking)).toHaveLength(0);
+  await expect(page.getByLabel('Full name')).toBeVisible();
+  await expectNoBlocking(page, testInfo, 'Checkout');
 });

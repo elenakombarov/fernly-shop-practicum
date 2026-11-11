@@ -13,6 +13,11 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  filterIssuesToCreate,
+  isIssuesDisabledError,
+  repoHasIssuesEnabled,
+} from './github-issues.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MARKER = '<!-- fernly-qa-report -->';
@@ -48,28 +53,69 @@ function slugTitle(title) {
     .replace(/^-|-$/g, '');
 }
 
-/** @returns {Array<{ id: string, title: string, body: string }>} */
-function parseFindings(md) {
+/**
+ * Normalize a finding title for comparison across branches.
+ * Strips optional leading F-NN ids and punctuation so
+ * "### Prices drop trailing zeros" matches "### F-01. Prices drop trailing zeros".
+ */
+export function normalizeFindingTitle(title) {
+  return String(title ?? '')
+    .toLowerCase()
+    .replace(/^f-\d+\.\s*/i, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+/** Confirmed findings only — stop before Suspicions / Questions sections. */
+function confirmedFindingsMarkdown(md) {
+  const cut = String(md ?? '').search(/^##\s+Suspicions\b/m);
+  return cut === -1 ? String(md ?? '') : String(md ?? '').slice(0, cut);
+}
+
+/**
+ * Parse confirmed FINDINGS.md entries.
+ * Accepts both `### F-01. Title` and `### Title`.
+ * Preserves F-NN ids when present; assigns sequential placeholders otherwise
+ * (placeholders are for parsing only — publishing uses branch ids).
+ * @returns {Array<{ id: string, title: string, body: string, key: string }>}
+ */
+export function parseFindings(md) {
   const entries = [];
-  const re = /^### (F-\d+)\.\s+(.+)$/gm;
+  const confirmed = confirmedFindingsMarkdown(md);
+  // Optional F-NN prefix; title is the rest of the heading.
+  const re = /^### (?:(F-\d+)\.\s+)?(.+)$/gm;
   let m;
   const starts = [];
-  while ((m = re.exec(md)) !== null) {
-    starts.push({ index: m.index, id: m[1], title: m[2].trim() });
+  let unprefixed = 0;
+  while ((m = re.exec(confirmed)) !== null) {
+    const id = m[1] || `U-${++unprefixed}`;
+    starts.push({ index: m.index, id, title: m[2].trim() });
   }
   for (let i = 0; i < starts.length; i++) {
     const start = starts[i];
-    const end = i + 1 < starts.length ? starts[i + 1].index : md.length;
-    const slice = md.slice(start.index, end).trim();
+    const end = i + 1 < starts.length ? starts[i + 1].index : confirmed.length;
+    const slice = confirmed.slice(start.index, end).trim();
     const lines = slice.split(/\r?\n/);
     const bodyLines = lines.slice(1);
+    const title = start.title;
     entries.push({
       id: start.id,
-      title: start.title,
+      title,
       body: bodyLines.join('\n').trim(),
+      key: normalizeFindingTitle(title),
     });
   }
   return entries;
+}
+
+export function diffNewFindings(branchFindings, baseFindings) {
+  const baseKeys = new Set(
+    (baseFindings ?? []).map((f) => f.key ?? normalizeFindingTitle(f.title)),
+  );
+  return (branchFindings ?? []).filter(
+    (f) => !baseKeys.has(f.key ?? normalizeFindingTitle(f.title)),
+  );
 }
 
 function readFindingsFile(filePath) {
@@ -79,7 +125,7 @@ function readFindingsFile(filePath) {
 
 const ZERO_SHA = '0000000000000000000000000000000000000000';
 
-function readBaseFindingsTitles(baseRef) {
+function readBaseFindings(baseRef) {
   const baseSha = env('BASE_SHA');
   if (baseSha && baseSha !== ZERO_SHA) {
     try {
@@ -88,21 +134,21 @@ function readBaseFindingsTitles(baseRef) {
         encoding: 'utf8',
         stdio: ['pipe', 'pipe', 'pipe'],
       });
-      return new Set(readFindingsFileFromString(raw).map((e) => e.title));
+      return readFindingsFileFromString(raw);
     } catch {
       /* fall through to ref */
     }
   }
-  if (!baseRef) return new Set();
+  if (!baseRef) return [];
   try {
     const raw = execFileSync(
       'git',
       ['show', `origin/${baseRef}:FINDINGS.md`],
       { cwd: ROOT, encoding: 'utf8', stdio: ['pipe', 'pipe', 'pipe'] },
     );
-    return new Set(readFindingsFileFromString(raw).map((e) => e.title));
+    return readFindingsFileFromString(raw);
   } catch {
-    return new Set();
+    return [];
   }
 }
 
@@ -251,7 +297,8 @@ function pickResult(results) {
 /** Parse JUnit XML (Cypress mocha-junit-reporter) without dependencies. */
 function parseJUnitXml(xml) {
   const cases = [];
-  const testcaseRe = /<testcase\b([^>]*)>([\s\S]*?)<\/testcase>/g;
+  // Match both <testcase .../> and <testcase ...>...</testcase>.
+  const testcaseRe = /<testcase\b([^>]*?)(?:\/>|>([\s\S]*?)<\/testcase>)/g;
   const fileFromSuites = [...xml.matchAll(/<testsuite\b[^>]*\bfile="([^"]+)"/g)].map(
     (m) => m[1],
   );
@@ -259,7 +306,7 @@ function parseJUnitXml(xml) {
   let m;
   while ((m = testcaseRe.exec(xml)) !== null) {
     const attrs = m[1];
-    const body = m[2];
+    const body = m[2] ?? '';
     const name = attrs.match(/\bname="([^"]*)"/)?.[1] ?? '';
     const classname = attrs.match(/\bclassname="([^"]*)"/)?.[1] ?? '';
     const skipped = /<skipped\b/.test(body);
@@ -496,8 +543,8 @@ function buildCommand(_args) {
     .flatMap((s) => s.failures);
 
   const findings = readFindingsFile(PATHS.findings);
-  const baseTitles = readBaseFindingsTitles(baseRef);
-  const newFindings = findings.filter((f) => !baseTitles.has(f.title));
+  const baseFindings = readBaseFindings(baseRef);
+  const newFindings = diffNewFindings(findings, baseFindings);
 
   let a11yBlock = '';
   if (existsSync(PATHS.a11ySummary)) {
@@ -556,6 +603,136 @@ function ghSpawn(args, options = {}) {
   });
 }
 
+function isHttpNotFound(errOrResult) {
+  const text = String(
+    errOrResult?.stderr ?? errOrResult?.stdout ?? errOrResult?.message ?? errOrResult ?? '',
+  );
+  return /Not Found \(HTTP 404\)/i.test(text) || /"status"\s*:\s*"404"/i.test(text);
+}
+
+/**
+ * REST comment id for PATCH /repos/.../issues/comments/{id}.
+ * `gh pr view --json comments` returns GraphQL node ids (IC_...) which 404 on REST.
+ * Prefer numeric REST `id` / `databaseId`.
+ */
+export function commentRestId(comment) {
+  if (!comment || typeof comment !== 'object') return null;
+  if (typeof comment.id === 'number' && Number.isFinite(comment.id)) return comment.id;
+  if (typeof comment.databaseId === 'number' && Number.isFinite(comment.databaseId)) {
+    return comment.databaseId;
+  }
+  if (typeof comment.id === 'string' && /^\d+$/.test(comment.id)) return Number(comment.id);
+  return null;
+}
+
+export function findCommentWithMarker(comments, marker) {
+  return (comments ?? []).find((c) =>
+    String(c?.body ?? '').trimStart().startsWith(marker),
+  );
+}
+
+function listPrCommentsRest(repo, pr) {
+  return ghSpawn(
+    ['api', `repos/${repo}/issues/${pr}/comments?per_page=100`],
+    { stdio: 'pipe' },
+  );
+}
+
+function patchIssueComment(repo, commentId, body) {
+  return spawnSync(
+    'gh',
+    [
+      'api',
+      '--method',
+      'PATCH',
+      '-H',
+      'Accept: application/vnd.github+json',
+      `/repos/${repo}/issues/comments/${commentId}`,
+      '--input',
+      '-',
+    ],
+    {
+      input: JSON.stringify({ body }),
+      encoding: 'utf8',
+      stdio: ['pipe', 'pipe', 'pipe'],
+    },
+  );
+}
+
+function createPrComment(repo, pr, commentPath) {
+  return ghSpawn(['pr', 'comment', pr, '--repo', repo, '--body-file', commentPath], {
+    stdio: 'pipe',
+  });
+}
+
+/**
+ * Idempotent QA report PR comment publish:
+ * list via REST (works with Issues disabled), update by numeric id, else create.
+ */
+export function publishQaReportComment({
+  repo,
+  pr,
+  commentBody,
+  commentPath,
+  dryRun = false,
+  listComments = listPrCommentsRest,
+  patchComment = patchIssueComment,
+  createComment = createPrComment,
+} = {}) {
+  if (dryRun) {
+    console.log(
+      `[dry-run] list/update-or-create QA report comment on ${repo}#${pr} via REST issues/${pr}/comments`,
+    );
+    return { action: 'dry-run', commentId: null };
+  }
+
+  const listed = listComments(repo, pr);
+  if (listed.status !== 0) {
+    // Listing should work for PRs even when Issues are disabled; fail closed.
+    const errText = String(listed.stderr || listed.stdout || '');
+    console.error(errText || 'Failed to list PR comments');
+    process.exit(listed.status ?? 1);
+  }
+
+  let comments = [];
+  try {
+    comments = JSON.parse(listed.stdout || '[]');
+  } catch {
+    console.error('Failed to parse PR comments JSON');
+    process.exit(1);
+  }
+
+  const existing = findCommentWithMarker(comments, MARKER);
+  const commentId = commentRestId(existing);
+
+  if (commentId != null) {
+    const patched = patchComment(repo, commentId, commentBody);
+    if (patched.status === 0) {
+      if (patched.stdout) process.stdout.write(patched.stdout);
+      if (patched.stderr) process.stderr.write(patched.stderr);
+      console.log(`Updated existing QA report comment ${commentId}`);
+      return { action: 'updated', commentId };
+    }
+    // Comment vanished between list and patch — create once instead of failing.
+    if (isHttpNotFound(patched)) {
+      console.log(
+        `Existing QA report comment ${commentId} not found (404); creating a new comment.`,
+      );
+    } else {
+      if (patched.stdout) process.stdout.write(patched.stdout);
+      if (patched.stderr) process.stderr.write(patched.stderr);
+      process.exit(patched.status ?? 1);
+    }
+  }
+
+  const created = createComment(repo, pr, commentPath);
+  if (created.stdout) process.stdout.write(created.stdout);
+  if (created.stderr) process.stderr.write(created.stderr);
+  if (created.status !== 0) process.exit(created.status ?? 1);
+  console.log('Created QA report comment');
+  return { action: 'created', commentId: null };
+}
+
 function publishCommand(args) {
   const dryRun = args.includes('--dry-run');
   const repo = env('GITHUB_REPOSITORY');
@@ -580,84 +757,80 @@ function publishCommand(args) {
     ? JSON.parse(readFileSync(issuesPath, 'utf8'))
     : [];
 
-  const listArgs = [
-    'issue',
-    'list',
-    '--repo',
-    repo,
-    '--label',
-    'qa-finding',
-    '--state',
-    'all',
-    '--json',
-    'body',
-    '--limit',
-    '500',
-  ];
-  if (dryRun) {
-    console.log('[dry-run] gh', listArgs.join(' '));
+  let issuesEnabled = true;
+  if (!dryRun) {
+    try {
+      issuesEnabled = repoHasIssuesEnabled(repo);
+    } catch (err) {
+      if (isIssuesDisabledError(err)) {
+        issuesEnabled = false;
+      } else {
+        throw err;
+      }
+    }
   }
-  const listed = dryRun
-    ? { stdout: '[]' }
-    : ghSpawn(listArgs, { stdio: 'pipe' });
-  if (!dryRun && listed.status !== 0) {
-    process.exit(listed.status ?? 1);
-  }
+
   const existingKeys = new Set();
-  for (const row of JSON.parse(listed.stdout || '[]')) {
-    const keyMatch = row.body?.match(
-      new RegExp(`${FINDING_KEY_MARKER}\\s+([\\w-]+)\\s*-->`),
-    );
-    if (keyMatch) existingKeys.add(keyMatch[1]);
-  }
-
-  const viewArgs = ['pr', 'view', pr, '--repo', repo, '--json', 'comments'];
-  const viewed = dryRun
-    ? { stdout: '{"comments":[]}' }
-    : ghSpawn(viewArgs, { stdio: 'pipe' });
-  let commentId = null;
-  if (viewed.stdout) {
-    const data = JSON.parse(viewed.stdout);
-    const hit = (data.comments ?? []).find((c) =>
-      (c.body ?? '').trimStart().startsWith(MARKER),
-    );
-    commentId = hit?.id ?? null;
-  }
-
-  if (commentId) {
-    const patchPayload = JSON.stringify({ body: commentBody });
-    const editArgs = [
-      'api',
-      '--method',
-      'PATCH',
-      '-H',
-      'Accept: application/vnd.github+json',
-      `/repos/${repo}/issues/comments/${commentId}`,
-      '--input',
-      '-',
+  if (issuesEnabled) {
+    const listArgs = [
+      'issue',
+      'list',
+      '--repo',
+      repo,
+      '--label',
+      'qa-finding',
+      '--state',
+      'all',
+      '--json',
+      'body',
+      '--limit',
+      '500',
     ];
     if (dryRun) {
-      console.log(`[dry-run] gh ${editArgs.join(' ')}  # ${commentPath}`);
+      console.log('[dry-run] gh', listArgs.join(' '));
+    }
+    const listed = dryRun
+      ? { stdout: '[]', status: 0, stderr: '' }
+      : ghSpawn(listArgs, { stdio: 'pipe' });
+    if (!dryRun && listed.status !== 0) {
+      if (isIssuesDisabledError(listed)) {
+        issuesEnabled = false;
+        console.log(
+          'GitHub Issues are disabled for this repository — skipping issue lookup/creation; continuing with PR comments.',
+        );
+      } else {
+        process.exit(listed.status ?? 1);
+      }
     } else {
-      const r = spawnSync('gh', editArgs, {
-        input: patchPayload,
-        encoding: 'utf8',
-        stdio: ['pipe', 'inherit', 'inherit'],
-      });
-      if (r.status !== 0) process.exit(r.status ?? 1);
+      for (const row of JSON.parse(listed.stdout || '[]')) {
+        const keyMatch = row.body?.match(
+          new RegExp(`${FINDING_KEY_MARKER}\\s+([\\w-]+)\\s*-->`),
+        );
+        if (keyMatch) existingKeys.add(keyMatch[1]);
+      }
     }
   } else {
-    const createArgs = ['pr', 'comment', pr, '--repo', repo, '--body-file', commentPath];
-    if (dryRun) {
-      console.log('[dry-run] gh', createArgs.join(' '));
-    } else {
-      const r = ghSpawn(createArgs);
-      if (r.status !== 0) process.exit(r.status ?? 1);
-    }
+    console.log(
+      'GitHub Issues are disabled for this repository — skipping issue lookup/creation; continuing with PR comments.',
+    );
   }
 
-  for (const issue of issues) {
-    if (existingKeys.has(issue.key)) continue;
+  publishQaReportComment({
+    repo,
+    pr,
+    commentBody,
+    commentPath,
+    dryRun,
+  });
+
+  const toCreate = filterIssuesToCreate(issues, existingKeys, { issuesEnabled });
+  if (!issuesEnabled && issues.length) {
+    console.log(
+      `Skipped creating ${issues.length} finding issue(s) because Issues are disabled.`,
+    );
+  }
+
+  for (const issue of toCreate) {
     const bodyFile = path.join(PATHS.outDir, `issue-${issue.key}.md`);
     writeFileSync(bodyFile, issue.body);
     const createIssueArgs = [
@@ -676,9 +849,29 @@ function publishCommand(args) {
       console.log('[dry-run] gh', createIssueArgs.join(' '));
     } else {
       const r = ghSpawn(createIssueArgs);
-      if (r.status !== 0) process.exit(r.status ?? 1);
+      if (r.status !== 0) {
+        if (isIssuesDisabledError(r)) {
+          console.log(
+            'GitHub Issues became unavailable during create — stopping further issue creation; PR comment already published.',
+          );
+          break;
+        }
+        process.exit(r.status ?? 1);
+      }
     }
   }
 }
 
-commandMain();
+function isExecutedDirectly() {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return path.resolve(entry) === fileURLToPath(import.meta.url);
+  } catch {
+    return false;
+  }
+}
+
+if (isExecutedDirectly()) {
+  commandMain();
+}

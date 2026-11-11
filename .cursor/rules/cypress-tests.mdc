@@ -4,116 +4,149 @@ globs: web/cypress/**
 alwaysApply: false
 ---
 
-# Cypress tests in Fernly
+# Cypress tests
+
+Component specs live in `web/cypress/component/**/*.cy.tsx`. UI specs with a mocked API live in `web/cypress/ui/**/*.cy.ts`. `@testing-library/cypress` is registered in `web/cypress/support/component.tsx` and `web/cypress/support/ui.ts`.
 
 ## 1. Queries
 
-Prefer Testing Library order: `findByRole`, then `findByLabelText`, then `findByText`. Never target CSS module classes or raw tag names.
+`findByRole`, then `findByLabelText`, then `findByText`. Never a CSS class or a tag name.
 
-```tsx
-// ✅ GOOD — web/cypress/component/QuantityStepper.cy.tsx
+**Good** — Increase quantity is the stepper button, "Pet-safe plants only" is the browse checkbox label, "Easy care" is what `CareLevelBadge` renders for level 1.
+
+```typescript
 cy.findByRole('button', { name: 'Increase quantity' }).click();
+cy.findByLabelText('Pet-safe plants only').click();
+cy.findByText('Easy care');
+```
 
-// ❌ BAD — class from QuantityStepper.module.css
-cy.get('button.QuantityStepper-module__button').last().click();
+**Bad** — `QuantityStepper` styles the buttons with a CSS module, and `SearchBox` renders a `<button>Search</button>`.
+
+```typescript
+cy.get('.button').first().click();
+cy.get('button').contains('Search').click();
 ```
 
 ## 2. States
 
-Assert `disabled`, `checked`, or values on the DOM node. Chaining `.should()` onto `findByRole` makes failures look like “element not found” when the locator worked.
+Check disabled, checked, or a value inside `.then`, and say what the element is. A failing `.should()` chained to `findByRole` reports "Unable to find", which looks like a broken locator when the state is what's wrong.
 
-```tsx
-// ✅ GOOD
-cy.findByRole('button', { name: 'Increase quantity' }).then(($el) =>
-  expect($el, 'Increase quantity at stock limit').to.be.disabled,
-);
+**Good** — the stock-limit stepper, the Medium radio in `SizePicker`, and the Sort by select (`price-desc` is "Price: high to low").
 
-// ❌ BAD — same file today; misleading failure text
+```typescript
+cy.findByRole('button', { name: 'Increase quantity' })
+  .then(($el) => expect($el, 'increase at the stock limit').to.be.disabled);
+
+cy.findByRole('radio', { name: /^Medium/ })
+  .then(($el) => expect($el, 'Medium size').to.be.checked);
+
+cy.findByLabelText('Sort by')
+  .then(($el) => expect($el, 'sort').to.have.value('price-desc'));
+```
+
+**Bad** — the assertion in `web/cypress/component/QuantityStepper.cy.tsx` today:
+
+```typescript
 cy.findByRole('button', { name: 'Increase quantity' }).should('be.disabled');
 ```
 
 ## 3. Waiting
 
-Never sleep for a fixed duration. Wait on an intercepted API alias or on what the customer sees.
+Never `cy.wait(<milliseconds>)`. Wait for an intercepted request by its alias, or for what the user sees. `findBy*` retries.
 
-```tsx
-// ✅ GOOD — UI test on browse
-cy.intercept('GET', '/api/plants*', { fixture: 'plants/browse-positive.json' }).as('plants');
+**Good** — the browse page loads `GET /api/plants` and its heading is "Plants for every windowsill".
+
+```typescript
+cy.intercept('GET', '/api/plants*', { fixture: 'plants-positive.json' }).as('plants');
 cy.visit('/');
 cy.wait('@plants');
-cy.findByRole('heading', { name: /browse/i });
+cy.findByRole('heading', { name: 'Plants for every windowsill' });
+```
 
-// ❌ BAD
+**Bad**
+
+```typescript
 cy.visit('/');
 cy.wait(500);
+cy.get('h1');
 ```
 
 ## 4. Data
 
-Component tests pass props in the mount. UI tests load responses from `web/cypress/fixtures/` — one file per scenario (positive, negative, edge).
+Component props belong in the test. API answers belong in `web/cypress/fixtures`, one file per scenario: positive, negative, edge.
 
-```tsx
-// ✅ GOOD — component props in QuantityStepper.cy.tsx
+**Good** — the stepper is mounted with props. A catalog answer is a fixture, for example `plants-positive.json` (Snake Plant, `pl-snake`), `plants-negative.json` (the catalog cannot be loaded), `plants-edge.json` (Chinese Money Plant, `pl-pilea`, stock 0).
+
+```typescript
 cy.mount(<QuantityStepper value={3} max={3} onChange={cy.spy()} />);
 
-// ✅ GOOD — fixture per scenario
-cy.fixture('plants/catalog-error.json').then((body) => {
-  cy.intercept('GET', '/api/plants*', { statusCode: 500, body }).as('plantsFail');
-});
+cy.intercept('GET', '/api/plants*', { fixture: 'plants-positive.json' }).as('plants');
+```
 
-// ❌ BAD — huge inline catalog in the spec
-cy.intercept('GET', '/api/plants*', { items: [/* 21 plants pasted here */] });
+**Bad** — the plant list is written inline in the spec.
+
+```typescript
+cy.intercept('GET', '/api/plants*', {
+  body: { items: [{ id: 'pl-snake', name: 'Snake Plant', price: 22 }], total: 1, page: 1, pageSize: 12 },
+});
 ```
 
 ## 5. Mocks
 
-Stub only Fernly API traffic under `/api/*`, with an alias. Never intercept the Vite app shell or static assets.
+`cy.intercept` only `/api/*` requests, and give each one an alias. Never stub the page.
 
-```tsx
-// ✅ GOOD
-cy.intercept('GET', '/api/plants*', { fixture: 'plants/browse-positive.json' }).as('plants');
+**Good** — the plant page reads `GET /api/plants/pl-fiddle`.
 
-// ❌ BAD
-cy.intercept('GET', '**/*', { fixture: 'plants/browse-positive.json' });
-cy.intercept('GET', '/', { body: '<html>fake</html>' });
+```typescript
+cy.intercept('GET', '/api/plants/pl-fiddle', { fixture: 'plant-positive.json' }).as('plant');
+```
+
+**Bad** — `/plants/pl-fiddle` is the page, not the API.
+
+```typescript
+cy.intercept('GET', '/plants/pl-fiddle', { fixture: 'plant.html' });
 ```
 
 ## 6. Tags
 
-Exactly one level tag per test: `{ tags: '@component' }` or `{ tags: '@ui' }`. A confirmed product bug adds `@known-bug` so CI can exclude it until fixed (`grepTags=-@known-bug`).
+Exactly one level tag per test: `{ tags: '@component' }` or `{ tags: '@ui' }`. A confirmed bug adds `@known-bug`, and that tag stays out of the CI gate until the bug is fixed. Do not put a level tag on `describe`.
 
-```tsx
-// ✅ GOOD
-it('disables − at the minimum', { tags: '@component' }, () => { /* … */ });
+**Good**
 
-// ❌ BAD — no tag, or tag only on describe
+```typescript
+it('calls onChange with the new value when + or − is clicked', { tags: '@component' }, () => {});
+
+it('offers Try again when the catalog cannot be loaded', { tags: '@ui' }, () => {});
+
+it('disables + at the stock limit', { tags: ['@component', '@known-bug'] }, () => {});
+```
+
+**Bad**
+
+```typescript
 describe('QuantityStepper', { tags: '@component' }, () => {
-  it('disables − at the minimum', () => { /* … */ });
+  it('disables − at the minimum', () => {});
 });
+
+it('loads the shop', { tags: ['@component', '@ui'] }, () => {});
 ```
 
 ## 7. App code
 
-Do not change `web/src` to green a test. If the test matches `docs/PRODUCT.md`, record it in `FINDINGS.md` (see F-01).
+Never change `web/src`. A failing test that matches `docs/PRODUCT.md` is a finding in `FINDINGS.md`.
 
-```markdown
-<!-- ✅ GOOD — FINDINGS.md evidence cites the failing spec -->
-- **Evidence:** `web/cypress/component/QuantityStepper.cy.tsx`, test "disables + at the stock limit"
+**Good** — `docs/PRODUCT.md` line 34 says the + button is disabled at the stock limit. The component test "disables + at the stock limit" fails, and `FINDINGS.md` records that.
 
-<!-- ❌ BAD — “fixing” QuantityStepper.tsx value > max to pass the test without product approval -->
-```
+**Bad** — editing `web/src/components/QuantityStepper.tsx` from `value > max` to `value >= max` so the test goes green.
 
 ## 8. Evidence
 
-Label how each claim was verified: **executed** (test or command run), **inspected** (code or walk only), or **not yet tested**.
+Label every claim **executed**, **inspected only**, or **not yet tested**.
 
-```markdown
-<!-- ✅ GOOD -->
-- **Evidence:** … fails under `npm run cy:component` (executed).
+**Good**
 
-<!-- ✅ GOOD — FINDINGS.md suspicions -->
-- **CareLevelBadge** — code: `LABELS[Math.min(level, 2) - 1]` (inspected, not yet tested).
+- **Executed:** `web/cypress/component/QuantityStepper.cy.tsx`, "disables + at the stock limit", was run and failed. The + button stayed enabled at `value={3}` `max={3}`.
+- **Inspected only:** `BrowsePage` renders "No plants match your filters" for `plants.isError`, and that branch was not triggered in the browser.
+- **Not yet tested:** prices without two decimals (`$22`, `$27.5`). No test yet.
 
-<!-- ❌ BAD -->
-- Quantity stepper probably broken (guess, no test or steps).
-```
+**Bad** — "The + button is broken" with no label, no test name, and no line in `docs/PRODUCT.md`.

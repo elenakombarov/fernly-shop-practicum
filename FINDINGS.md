@@ -1,196 +1,194 @@
-# Fernly findings
+# Findings
 
-One entry per issue, ordered by severity: money and privacy first, then broken flows, then everything else. A finding needs evidence: a failing test, or exact steps and requests. The map of the app is in [docs/APP-MAP.md](docs/APP-MAP.md).
+A suspicion is not a finding until a test proves it. Confirmed findings are listed first, in severity order: money and privacy, then broken flows, then everything else.
 
-## Entry format
+Confirmed entries use stable ids (`F-01`, `F-02`, …) so QA reporting and GitHub issues stay deterministic.
 
-```markdown
-### F-NN. <One-line title: what is wrong>
+### F-01. Prices drop trailing zeros
 
-- **Where:** <page, component, or endpoint>
-- **Category:** <Components | Pages | Business rules in the API | The contract | Caching | Authorization | Accessibility>
-- **Impact:** <the impact on a customer, in one sentence>
-- **Evidence:** <the test that fails (file and test name), or the exact steps and requests>
-- **Contradicts:** <the line in docs/PRODUCT.md or the API contract>
-- **Suggested fix:** <optional, one line>
-```
+- **Where:** `formatPrice` in `web/src/money.ts`, shown by `PriceTag`, `PlantCard`, `SizePicker`, and the browse card
+- **Category:** Money
+- **Impact:** Whole-dollar and one-decimal prices are shown without two decimal places (`$0`, `$1`, `$12.5`, `$22`, `+$6`). The amounts are harder to compare, and they do not match the shop's dollar format.
+- **Evidence:** **Executed:** these tests fail on the price text.
+  - `web/cypress/ui/browse.cy.ts`, "shows $0.00 for a plant priced at zero": the mocked Air Plant at price 0 renders `$0`.
+  - `web/cypress/component/PriceTag.cy.tsx`: PT-01 `amount={12.5}` is `$12.5`; PT-02 `amount={22}` is `$22`; PT-04 `amount={0}` is `$0`; PT-05 `amount={1}` is `$1`.
+  - `web/cypress/component/PlantCard.cy.tsx`, PC-04: Snake Plant at price 22 renders `$22`.
+  - `web/cypress/component/SizePicker.cy.tsx`, SZ-03: Medium at a delta of 6 renders `+$6`.
+  - `web/cypress/ui/plant.cy.ts`, PL-05: Air Plant at price 0 renders `$0`.
+  - `web/cypress/ui/cart.cy.ts`, CA-05: the Air Plant unit price, line total, and subtotal render `$0`.
+  - `web/cypress/ui/orders.cy.ts`, OR-05: order `ord-zero` has total 0 and renders `$0`.
+  PT-03 (`$9.99`), PT-06 (`$0.01`), and PT-16 (`$0.99`) passed. SZ-02 (Small, "Base price") passed.
+- **Contradicts:** `docs/PRODUCT.md` line 31 (every price is dollars with two decimals: `$12.50`, never `$12.5`). SZ-03 also cites line 33 (Medium adds the amount shown).
+- **Suggested fix:** Format every amount with two decimal places.
 
-## Findings
+### F-02. Price: high to low returns the cheapest plant first
 
-### F-01. Prices drop trailing zeros (and zero shows as $0)
+- **Where:** `GET /api/plants?sort=price-desc` (`api/src/store.ts`, `listPlants`)
+- **Category:** Browse
+- **Impact:** A customer, or any client, that asks for the highest price first is given the cheapest plants. The $0.99 Succulent Cutting leads the list, and the $189 plant does not. Someone comparing by price can treat the cheapest plant as the most expensive.
+- **Evidence:** **Executed:** `tests/api/plants.spec.ts`, "price-desc returns the most expensive plant first", fails. The catalog maximum is `189`. Expected the first `price` to be `189`. Actual first plant is Succulent Cutting at `0.99`, then Aloe Vera at `9.99`, then Pothos 'Golden' at `12.5`.
+- **Contradicts:** `docs/PRODUCT.md` line 25 (Price: high to low means most expensive first). `GET /openapi.json` describes `price-desc` as highest first on `GET /api/plants`.
+- **Suggested fix:** Sort `price-desc` with the highest price first.
 
-- **Where:** `formatPrice` in `web/src/money.ts`, used by `PriceTag` and `OrderSummary` (Browse, Cart, Checkout, Orders)
-- **Category:** Components
-- **Impact:** Money looks inconsistent and sometimes unpriced; free-shipping hints and totals do not always show two decimals.
-- **Evidence:** `web/cypress/ui/browse.cy.ts`, test "shows $0.00 for a plant priced at 0" (executed). `web/cypress/ui/cart.cy.ts`: **CP-02** expects `$50.00` but subtotal/total render `$50`; **CP-03** expects `Add $10.00 more…` but the hint uses `$10`; **CP-05** expects `$0.00` on a zero line but renders `$0`. Screenshots under `web/cypress/screenshots/cart.cy.ts/` for those tests.
-- **Contradicts:** `docs/PRODUCT.md`: "Every price is shown in dollars with **two decimals**, everywhere: `$12.50`, never `$12.5`."
-- **Suggested fix:** Format with two fraction digits (`amount.toFixed(2)`) so 0 is `$0.00`.
+### F-03. Price: high to low shows the cheapest plant first
 
-### F-02. A catalog load failure looks like an empty filter result
+- **Where:** Browse (`/`), Sort by "Price: high to low"
+- **Category:** Browse
+- **Impact:** Choosing "Price: high to low" puts Succulent Cutting first on the shop. The most expensive plant, Variegated Thai Constellation Monstera (Collector's Edition, Limited Greenhouse Batch), is not the first card. A customer using that sort sees the opposite of what the control promises.
+- **Evidence:** **Executed:** `tests/e2e/browse.spec.ts`, "choosing Price: high to low shows the most expensive plant first", fails. Expected the first plant heading to be "Variegated Thai Constellation Monstera (Collector's Edition, Limited Greenhouse Batch)". The first heading was "Succulent Cutting".
+- **Contradicts:** `docs/PRODUCT.md` line 25 (Price: high to low means most expensive first).
+- **Suggested fix:** After "Price: high to low" is chosen, show the most expensive plant first. The control already asks for `price-desc`; the list it receives has to come back in that order.
+
+### F-04. A catalog load failure looks like an empty search
 
 - **Where:** Browse page (`web/src/pages/BrowsePage.tsx`)
-- **Category:** Pages
-- **Impact:** When the catalog cannot be loaded, a customer is told nothing matches and has no way to try again.
-- **Evidence:** `web/cypress/ui/browse.cy.ts`, test "shows an error with Try again when the catalog cannot be loaded", fails under `npm run cy:ui` (executed). `GET /api/plants?*` is stubbed with 500 (`web/cypress/fixtures/plants/browse-server-error.json`). The page has no `role="alert"` and no "Try again" button; it shows the heading "0 plants" and "No plants match your filters". Screenshot: `web/cypress/screenshots/browse.cy.ts/Browse page -- shows an error with Try again when the catalog cannot be loaded (failed).png`.
-- **Contradicts:** `docs/PRODUCT.md`: "If the catalog can't be loaded, the page says so and offers **Try again**. It never pretends there are no plants."
-- **Suggested fix:** On `plants.isError`, render an alert with Try again, and reserve the empty state for a successful response with no items.
+- **Category:** Browse
+- **Impact:** When the catalog cannot be loaded, the shop says no plants match the filters and does not offer a way to try again. A customer cannot tell a failure from an empty search.
+- **Evidence:** **Executed:** `web/cypress/ui/browse.cy.ts`, test "offers Try again when the catalog cannot be loaded", fails. `GET /api/plants?*` is stubbed with status 500 and `plants-negative.json`. The page has no `role="alert"` and no "Try again" button. It shows the heading "0 plants", the heading "No plants match your filters", and the message "Try another search or clear a filter."
+- **Contradicts:** `docs/PRODUCT.md` line 27 (if the catalog can't be loaded, the page says so and offers Try again, and never pretends there are no plants)
+- **Suggested fix:** When the plants request fails, show an alert and a Try again button, and do not use the empty-filter copy.
 
-### F-03. Quantity stepper's + button stays enabled at the stock limit
+### F-05. The + button stays enabled when the quantity equals the stock left
 
-- **Where:** `QuantityStepper` component (`web/src/components/QuantityStepper.tsx`), used on the plant page and in cart lines
+- **Where:** `QuantityStepper` (`web/src/components/QuantityStepper.tsx`), on the plant page and in the cart
 - **Category:** Components
-- **Impact:** A customer can raise the quantity one above the stock left, asking for a plant the shop doesn't have.
-- **Evidence:** `web/cypress/component/QuantityStepper.cy.tsx`, test "disables + at the stock limit", fails under `npm run cy:component`. `web/cypress/ui/cart.cy.ts`, **CP-10** (executed): cart line at quantity 3 with stock 3 leaves **Increase quantity** enabled. Screenshots: `web/cypress/screenshots/QuantityStepper.cy.tsx/…` and `web/cypress/screenshots/cart.cy.ts/Cart page -- CP-10 … (failed).png`.
-- **Contradicts:** `docs/PRODUCT.md`: "**Quantity** starts at 1 and can never go above the stock left: at the stock limit, the **+** button is disabled."
-- **Suggested fix:** Disable + when `value >= max` instead of `value > max`.
+- **Impact:** A customer can raise the quantity above the number of plants left in stock.
+- **Evidence:** **Executed:** `web/cypress/component/QuantityStepper.cy.tsx`, test "disables + at the stock limit", fails. It mounts the stepper at `value={3}` and `max={3}` and expects Increase quantity to be disabled. The + button stayed enabled.
+- **Contradicts:** `docs/PRODUCT.md` line 34 (at the stock limit, the + button is disabled)
+- **Suggested fix:** Disable increase when `value >= max`, not only when `value > max`.
 
-### F-04. A rejected cart quantity change shows no error toast
+### F-06. Care level 3 says Moderate care
 
-- **Where:** Cart page (`web/src/pages/CartPage.tsx`) when `PATCH /api/cart/lines/{lineId}` fails
+- **Where:** `CareLevelBadge` (`web/src/components/CareLevelBadge.tsx`)
+- **Category:** Components
+- **Impact:** A plant that needs expert care is described as moderate, so a customer can underestimate how much attention it needs.
+- **Evidence:** **Executed:** `web/cypress/component/CareLevelBadge.cy.tsx`, CB-03 "shows Expert care with three filled dots", fails. `level={3}` renders "Moderate care" and three filled dots. CB-01 (Easy care, one dot) and CB-02 (Moderate care, two dots) passed in the same run.
+- **Contradicts:** `docs/PRODUCT.md` line 32 (care level 1 is Easy, 2 is Moderate, 3 is Expert)
+- **Suggested fix:** Use the Expert label for level 3.
+
+### F-07. A plant's rating is a string, not a number
+
+- **Where:** `GET /api/plants/{plantId}` (`api/src/store.ts`, `getPlant`)
+- **Category:** API
+- **Impact:** A client that checks the plant against the published `Plant` schema rejects it. Monstera Deliciosa comes back with `rating` `"4.7"`, a string, so numeric comparisons and schema checks fail. The plant page converts the value before showing it, so a shopper can still read the rating, but the contract the API publishes is not what it returns.
+- **Evidence:** **Executed:** `tests/api/plants.spec.ts`, "a plant matches the Plant schema", fails. `GET /api/plants/pl-monstera` was checked against the `Plant` schema. Expected `rating` to be a number. Actual: schema error `/rating: must be number`. The body has `rating` `"4.7"` (a string).
+- **Contradicts:** `GET /openapi.json` schema `Plant`: `rating` is a number from 0 to 5. `docs/PRODUCT.md` line 3 names that document as the API contract.
+- **Suggested fix:** Return `rating` as a number on `GET /api/plants/{plantId}`.
+
+### F-08. The price color is below 4.5:1 on the shop background
+
+- **Where:** axe rule `color-contrast` on `PriceTag` (`#8dbb8a`). Pages: Browse (12 prices), Plant (1 price), Cart (5 prices), Checkout (3 prices). Sign in has none.
+- **Category:** Accessibility
+- **Impact:** Serious. The price is pale green, so a customer can misread what a plant, a line, the shipping, or the total costs. Browse, Plant, and Checkout fail the accessibility scan on this rule. Cart has the same failure and is not blocking only because `a11y-baseline.json` accepts `color-contrast` on Cart until 2026-12-31 (owner "design team", reason "new brand colors").
+- **Evidence:** **Executed:** `web/cypress/component/PriceTag.cy.tsx`, PT-14 "keeps the price at a 4.5:1 contrast on the shop background", fails. The computed color is `rgb(141, 187, 138)` (`#8dbb8a`). Against `#f6faf3` the contrast is about 2.07:1. **Executed:** `tests/a11y/pages.spec.ts` on 4 Nov 2026. "Browse has no blocking accessibility violations" fails with 12 new serious `color-contrast` nodes. Example: `li:nth-child(1) > article > .PlantCard-module__body > .PlantCard-module__footer > .PriceTag-module__price.PriceTag-module__md`, `$34.99`, contrast 2.18 (`#8dbb8a` on `#ffffff`, 12.6pt bold; expected 4.5:1). "Plant has no blocking accessibility violations" fails on `.PriceTag-module__price`, contrast 2.06 (`#8dbb8a` on `#f6faf3`, 19.2pt bold; expected 3:1 for that large text). "Checkout has no blocking accessibility violations" fails on 3 nodes, including the `$34.99` subtotal at 2.18 (`#8dbb8a` on `#ffffff`, 12.6pt bold; expected 4.5:1) and the `$41.94` total at 2.18 (19.2pt bold; expected 3:1). The Cart scan recorded the same rule on 5 nodes (unit price, line total, subtotal, shipping `$6.95`, and the `$41.94` total), all serious and baselined, so "Cart has no blocking accessibility violations" passed. Report: `a11y-report/results.json`.
+- **Contradicts:** `docs/PRODUCT.md` line 63 (text has enough contrast against its background, 4.5:1 for normal text). WCAG 2.1 AA success criterion 1.4.3 Contrast (Minimum), axe tags `wcag2aa` and `wcag143`: 4.5:1 for normal text and 3:1 for large text.
+- **Suggested fix:** Darken the price color until every price meets 4.5:1, including the large prices that axe measured against a 3:1 bar.
+
+### F-09. The search field has no name a screen reader can announce
+
+- **Where:** axe rule `label` on the Browse search field (`.SearchBox-module__input` in `SearchBox`). Sign in, Plant, Cart, and Checkout have no `label` violation.
+- **Category:** Accessibility
+- **Impact:** Critical. The search field is announced with no name. "Search plants" is only a visual hint, so a customer using a screen reader cannot tell what the field is for.
+- **Evidence:** **Executed:** `web/cypress/component/SearchBox.cy.tsx`, SB-16 "gives the search field a name", fails. With `value=""`, the searchbox accessible name is empty. **Executed:** `tests/a11y/pages.spec.ts`, "Browse has no blocking accessibility violations", fails. The scan reports one critical `label` node: `<input class="SearchBox-module__input" type="search" value="">` has no label, `aria-label`, `aria-labelledby`, title, or placeholder. Report: `a11y-report/results.json` (4 Nov 2026).
+- **Contradicts:** `docs/PRODUCT.md` line 61 (every button and form field has a name a screen reader can announce). WCAG 2.1 A success criterion 4.1.2 Name, Role, Value, axe tags `wcag2a` and `wcag412`.
+- **Suggested fix:** Give the search field a name a screen reader can announce.
+
+### F-10. Keyboard focus on the search field is not visible
+
+- **Where:** `SearchBox` input (`outline: none` in `web/src/components/SearchBox.module.css`)
+- **Category:** Accessibility
+- **Impact:** Tabbing to the search field draws no focus ring, so a keyboard user can lose their place. The Search button does show a gold ring.
+- **Evidence:** **Executed:** `web/cypress/component/SearchBox.cy.tsx`, SB-18 "submits with Enter and keeps focus visible", fails. Tab reaches the field, and Enter after `fern` calls `onSearch` once with `fern` (that assertion passed). The field's focus ring is `none 0px rgb(0, 0, 0)`. The Search button's ring is `solid 3px rgb(224, 165, 38)`.
+- **Contradicts:** `docs/PRODUCT.md` line 64 (everything works with the keyboard alone, and focus is always visible)
+- **Suggested fix:** Remove `outline: none` from the search field so the focus outline stays visible.
+
+### F-11. The save button on a plant card has no name a screen reader can announce
+
+- **Where:** axe rule `button-name` on the Browse plant-card save button (`.PlantCard-module__save`), 12 buttons, one per plant. Plant, Sign in, Cart, and Checkout have no `button-name` violation.
+- **Category:** Accessibility
+- **Impact:** Critical. The heart is hidden from assistive tech, and the button has no other name. A customer using a screen reader hears an unlabeled button and cannot tell it saves the plant.
+- **Evidence:** **Executed:** `web/cypress/component/PlantCard.cy.tsx`, PC-15 "gives the save button a name and does not announce the heart", fails. The heart stays hidden. The button's accessible name is empty. **Executed:** `tests/a11y/pages.spec.ts`, "Browse has no blocking accessibility violations", fails on 12 critical `button-name` nodes. Example: `li:nth-child(1) > article > .PlantCard-module__save[type="button"]`, `<button type="button" class="PlantCard-module__save " aria-pressed="false">`, with no visible text, `aria-label`, `aria-labelledby`, or title. Report: `a11y-report/results.json` (4 Nov 2026).
+- **Contradicts:** `docs/PRODUCT.md` line 61 (every button has a name a screen reader can announce). WCAG 2.1 A success criterion 4.1.2 Name, Role, Value, axe tags `wcag2a` and `wcag412`.
+- **Suggested fix:** Give the save button a name a screen reader can announce, and keep the heart hidden.
+
+### F-12. The plant photo has no alternative text
+
+- **Where:** axe rule `image-alt` on the Plant page hero (`img.Pages-module__heroImage`, `/plants/monstera.svg`). Browse, Sign in, Cart, and Checkout have no `image-alt` violation.
+- **Category:** Accessibility
+- **Impact:** Critical. The plant picture is announced with no description, so a customer using a screen reader does not hear what the photo shows.
+- **Evidence:** **Executed:** `tests/a11y/pages.spec.ts`, "Plant has no blocking accessibility violations", fails. The scan reports one critical `image-alt` node: `<img class="Pages-module__heroImage" src="/plants/monstera.svg">` has no `alt`, `aria-label`, `aria-labelledby`, or title. Report: `a11y-report/results.json` (4 Nov 2026). The card photo is a different image: PC-14 passed, and its alternative text is "Snake Plant".
+- **Contradicts:** `docs/PRODUCT.md` line 62 (every meaningful image has alternative text). WCAG 2.1 A success criterion 1.1.1 Non-text Content, axe tags `wcag2a` and `wcag111`.
+- **Suggested fix:** Give the plant photo alternative text that names the plant.
+
+## Suspicions
+
+These tests failed, and the recorded evidence does not confirm that the product is wrong. They stay out of Findings until that is settled.
+
+### Enter on the focused save button does not report the plant id
+
+- **Where:** `PlantCard` save button (`web/src/components/PlantCard.tsx`)
+- **Category:** Accessibility
+- **Impact:** A keyboard user can tab to the heart, see the focus ring, and press Enter without the plant being saved.
+- **Evidence:** **Executed:** `web/cypress/component/PlantCard.cy.tsx`, PC-17 "keeps focus visible and saves the plant from the keyboard", fails. Tab lands on the photo link, the save button, and the name link, and each focus ring is visible (those assertions passed). Focus returns to the save button. Enter does not call `onToggleSave`. PC-12 passed in the same run: a click calls `onToggleSave` once with `pl-snake`. **Inspected only:** the control is a native `button` with `onClick`. A native button is supposed to fire that click when Enter is pressed, so the runner's Enter key may be what failed to click, rather than the component ignoring Enter.
+- **Contradicts:** `docs/PRODUCT.md` line 64 (everything works with the keyboard alone, and focus is always visible)
+- **Suggested fix:** Confirm Enter on the focused save button calls `onToggleSave` with the plant id. If a real Enter already does, the gap is the test runner's key, not the card.
+
+### Enter on Try again does not call onRetry
+
+- **Where:** `ErrorBanner` Try again button (`web/src/components/Feedback.tsx`)
+- **Category:** Accessibility
+- **Impact:** A keyboard user can focus Try again, see the focus ring, and press Enter without retrying the failed load.
+- **Evidence:** **Executed:** `web/cypress/component/ErrorBanner.cy.tsx`, EB-05 "keeps focus visible and retries with Enter", fails. Focus is on Try again and the focus ring is visible (those assertions passed). Typed Enter does not call `onRetry`. EB-03 passed: a click calls `onRetry` once. The control is a native `button` with `onClick`, so the runner's typed Enter may be what failed to click. The same pattern failed for CartLine LN-08 and Toast TO-07.
+- **Contradicts:** `docs/PRODUCT.md` line 64 (everything works with the keyboard alone, and focus is always visible)
+- **Suggested fix:** Confirm Enter on the focused Try again button calls `onRetry` once. If a real Enter already does, the gap is the test runner's key, not the banner.
+
+### Enter on Remove does not remove the cart line
+
+- **Where:** `CartLine` Remove button (`web/src/components/CartLine.tsx`)
+- **Category:** Accessibility
+- **Impact:** A keyboard user can focus Remove, and press Enter without the line leaving the cart.
+- **Evidence:** **Executed:** `web/cypress/component/CartLine.cy.tsx`, LN-08 "names Remove and removes the line with Enter", fails. The button's name is "Remove Aloe Vera" and it has focus (those assertions passed). Typed Enter does not call `onRemove`. LN-05 passed: a click calls `onRemove` once with `ln-aloe`. The control is a native `button` with `onClick`. The runner's typed Enter may be what failed to click.
+- **Contradicts:** `docs/PRODUCT.md` line 64 (everything works with the keyboard alone). The button name matches line 61.
+- **Suggested fix:** Confirm Enter on the focused Remove button calls `onRemove` with the line id. If a real Enter already does, the gap is the test runner's key, not the row.
+
+### Enter on Dismiss does not close the toast
+
+- **Where:** `Toast` Dismiss button (`web/src/components/Feedback.tsx`)
+- **Category:** Accessibility
+- **Impact:** A keyboard user can focus Dismiss, see the focus ring, and press Enter without the toast closing.
+- **Evidence:** **Executed:** `web/cypress/component/Toast.cy.tsx`, TO-07 "keeps focus visible and dismisses with Enter", fails. Focus is on Dismiss and the focus ring is visible (those assertions passed). Typed Enter does not call `onClose`. TO-04 passed: a click on Dismiss calls `onClose` once. The control is a native `button` with `onClick`. The runner's typed Enter may be what failed to click.
+- **Contradicts:** `docs/PRODUCT.md` line 64 (everything works with the keyboard alone, and focus is always visible)
+- **Suggested fix:** Confirm Enter on the focused Dismiss button calls `onClose` once. If a real Enter already does, the gap is the test runner's key, not the toast.
+
+### The toast does not call onClose when the clock reaches 4 seconds
+
+- **Where:** `Toast` (`web/src/components/Feedback.tsx`)
+- **Category:** Components
+- **Impact:** A success or error message may stay on screen instead of closing itself after 4 seconds. The customer has to dismiss it by hand.
+- **Evidence:** **Executed:** `web/cypress/component/Toast.cy.tsx`, TO-05 "calls onClose once after 4 seconds", fails. The clock moves to 3999ms without calling `onClose` (that assertion passed). At 4000ms `onClose` is still not called. TO-04 passed: clicking Dismiss calls `onClose` once. TO-06 passed: `duration={0}` does not call `onClose`. **Inspected only:** the effect calls `window.setTimeout(onClose, duration)`, and `duration` defaults to 4000. A real four-second wait was not used.
+- **Contradicts:** the component's purpose (`duration` defaults to 4000, and `onClose` runs when the toast closes itself)
+- **Suggested fix:** Confirm the toast calls `onClose` once after 4 real seconds. If it does, the gap is the test clock, not the toast.
+
+### The signed-out cart address was still /cart when it was checked
+
+- **Where:** Cart page (`/cart`)
 - **Category:** Pages
-- **Impact:** When the shop rejects a quantity change (for example not enough stock), the customer gets no feedback; the quantity stays the same with no explanation.
-- **Evidence:** `web/cypress/ui/cart.cy.ts`, **CP-13** (executed): stubbed PATCH returns 400 `{ detail: "Not enough stock left." }`; quantity stays 1 but no `role="status"` toast with that message. Screenshot: `web/cypress/screenshots/cart.cy.ts/Cart page -- CP-13 … (failed).png`.
-- **Contradicts:** `docs/APP-MAP.md` `/cart`: "**Change rejected:** error toast with the API's `detail`."
-- **Suggested fix:** Ensure failed `updateLine` / `removeLine` mutations surface `error.message` in the cart `Toast` (same pattern as the plant page add-to-cart error).
-
-### F-05. Price: high to low sorts cheapest first
-
-- **Where:** `listPlants` in `api/src/store.ts` (`sort=price-desc` uses the same ascending comparator as `price-asc`); Browse follows the API via `GET /api/plants`
-- **Category:** Business rules in the API
-- **Impact:** Choosing **Price: high to low** shows the cheapest plants first (for example Succulent Cutting at $0.99), not the most expensive.
-- **Evidence:** `tests/api/plants.spec.ts`, test "GET /api/plants?sort=price-desc lists the most expensive plant first" (executed): first item price `0.99`, max in page `189`. `tests/e2e/browse.spec.ts`, test "Price: high to low shows the most expensive plant first" (executed): first card heading is "Succulent Cutting", not the Thai Constellation collector plant. Code: `case 'price-desc':` falls through with `results.sort((a, b) => a.price - b.price)`.
-- **Contradicts:** `docs/PRODUCT.md`: "**Price: high to low (most expensive first)**." OpenAPI on `GET /api/plants`: `price-desc (highest first)`.
-- **Suggested fix:** Sort `price-desc` with `(a, b) => b.price - a.price`.
-
-### F-06. Plant detail JSON sends rating as a string
-
-- **Where:** `getPlant` in `api/src/store.ts` (`rating: plant.rating.toFixed(1)`); `GET /api/plants/{plantId}`
-- **Category:** The contract
-- **Impact:** Clients and schema validators that expect a number (per OpenAPI) reject or mis-parse plant detail responses; list responses still use a numeric rating.
-- **Evidence:** `tests/api/plants.spec.ts`, test "GET /api/plants/{plantId} returns a plant that matches Plant" (executed): Ajv error `/rating must be number`. Example body: `"rating":"4.7"` from `GET /api/plants/pl-monstera` (executed).
-- **Contradicts:** OpenAPI `Plant` / `PlantSummary`: `rating` is a number (0–5). `listPlants` via `summary()` returns a number; only the detail endpoint stringifies.
-- **Suggested fix:** Return `plant.rating` (or a numeric rounded value), not `toFixed(1)`.
-
-### F-07. Plant card save buttons have no accessible name
-
-- **Where:** `PlantCard` save (heart) control on Browse (`web/src/components/PlantCard.tsx`); same pattern on every catalog card
-- **Category:** Accessibility
-- **Impact:** Screen-reader users hear an unnamed button on every plant card and cannot tell what it does (save / unsave).
-- **Evidence:** `tests/a11y/pages.spec.ts`, test "Browse" (executed under `npx playwright test --project=a11y`): axe `button-name`, **critical**, one failure per visible card (12 on the default page). Example target: `li:nth-child(1) > article > .PlantCard-module__save[type="button"]`; HTML is an icon-only `<button>` with `aria-pressed` and no `aria-label`. Attachments: `axe-results`, `axe-shot:Browse:button-name:*` on that run.
-- **Contradicts:** `docs/PRODUCT.md`: "every button and form field has a name a screen reader can announce."
-- **Suggested fix:** Add an `aria-label` that reflects saved state (for example "Save Monstera Deliciosa" / "Remove Monstera Deliciosa from saved").
-
-### F-08. Plant detail hero image has no alternative text
-
-- **Where:** Plant page hero `<img>` (`web/src/pages/PlantPage.tsx`)
-- **Category:** Accessibility
-- **Impact:** Screen-reader users get no description of the main product image on the plant page.
-- **Evidence:** `tests/a11y/pages.spec.ts`, test "Plant" (executed under `npx playwright test --project=a11y`): axe `image-alt`, **critical**, target `img` — `<img class="Pages-module__heroImage" src="/plants/monstera.svg">` with no `alt`. Attachment: `axe-shot:Plant:image-alt:0`.
-- **Contradicts:** `docs/PRODUCT.md`: "every meaningful image has alternative text."
-- **Suggested fix:** Set `alt` to the plant name (or a short descriptive phrase including the plant name).
-
-### F-09. Price text fails WCAG colour contrast
-
-- **Where:** `PriceTag` (`web/src/components/PriceTag.module.css` — foreground `#8dbb8a`) on Browse cards, plant detail, cart lines, order summary, checkout
-- **Category:** Accessibility
-- **Impact:** Prices are hard to read for customers with low vision or on bright screens; the shop fails WCAG contrast requirements on money labels across the purchase flow.
-- **Evidence:** `tests/a11y/pages.spec.ts` (executed under `npx playwright test --project=a11y`): axe `color-contrast`, **serious** — **Browse** (price on each card, ~2.18:1 on `#ffffff`); **Plant** (large price ~2.06:1 on `#f6faf3`); **Cart** (five price spans, ~2.18:1 on `#ffffff`); **Checkout** (subtotal/total, ~2.18:1). Same component: `web/cypress/component/PriceTag.cy.tsx`, test "PT-16 meets contrast on page background for each size" (executed under `npm run cy:component`). Screenshot: `web/cypress/screenshots/PriceTag.cy.tsx/PriceTag -- PT-16 meets contrast on page background for each size (failed).png`.
-- **Contradicts:** `docs/PRODUCT.md`: "text has enough contrast against its background (4.5:1 for normal text)." Fernly aims for **WCAG 2.1 level AA** on every page.
-- **Suggested fix:** Darken price colour (or change background) so normal and large text meet 4.5:1 / 3:1 as required.
-- **Further evidence (executed):** `tests/a11y/promo.spec.ts` **X1 checkout of a discounted cart** and **X1 a paid order with a discount line** (`npx playwright test tests/a11y/promo.spec.ts --project=a11y`). Both are new pages for the baseline, so price colour is a blocking `color-contrast` failure: `#8dbb8a` on `#ffffff` at about 2.18:1 (subtotal, shipping, and the large total). The discount line itself is a darker green and passed the 4.5:1 checks in `web/cypress/component/OrderSummary.cy.tsx` **C1-06**, `web/cypress/ui/checkout-promo.cy.ts` **U2-06**, and `web/cypress/ui/orders-promo.cy.ts` **U3-08**.
-
-### F-10. A percentage code also takes 10% off shipping
-
-- **Where:** `POST /api/cart/promo` and the cart total (`LEAFY10`), then the order copied from that cart
-- **Category:** Business rules in the API
-- **Impact:** The customer is undercharged: shipping is discounted even though the percentage applies only to plants. One Small Pothos ($12.50 + $6.95 shipping) is discounted $1.95 instead of $1.25, so the total is $17.50 instead of $18.20.
-- **Evidence:** `tests/api/promo-codes.spec.ts` (executed, `npx playwright test tests/api/promo-codes.spec.ts --project=api`). **M1** on one Small Pothos: discount `1.95` (expected `1.25`). Succulent Cutting: discount `0.79` (expected `0.10`). Fiddle Leaf Fig at $49.00: discount `5.60` (expected `4.90`). Quantity raised to 2: discount `3.20` (expected `2.50`). **M3** Bird of Paradise at $50.00: discount `5.70` (expected `5.00`), which is 10% of $50.00 + $6.95. **M4** and **SCH1** place that Pothos order and the order’s discount is `1.95` as well. **B1** `leafy10` fails on the same `1.95`. The browser shows it too: `tests/e2e/promo-codes.spec.ts` **E1 applying leafy10…** does not find `−$1.25` or `$18.20` on the cart, checkout, paid summary, or orders list (Discount (LEAFY10) and `$6.95` do show). Checkout and order axe output render the total as `$17.5`.
-- **Contradicts:** `docs/features/promo-codes.md`: “A percentage code takes that percentage off the subtotal of the plants — never off shipping.” OpenAPI on `POST /api/cart/promo`: percentage off the plant subtotal, never off shipping. Cart `discount`: “Promo discount on the plants, never on shipping.”
-- **Suggested fix:** Compute the percentage from the plant subtotal only, then add shipping after that.
-
-### F-11. A cart of exactly $50.00 still pays $6.95 shipping
-
-- **Where:** Cart totals (`GET /api/cart`, `POST /api/cart/lines`) for `pl-bird` size `S`
-- **Category:** Business rules in the API
-- **Impact:** Bird of Paradise at the free-shipping line is still charged $6.95 for shipping.
-- **Evidence:** `tests/api/promo-codes.spec.ts` **SCH1 a $50.00 Bird of Paradise with no code ships free** (executed): shipping `6.95`, expected `0`. **M2** `FREESHIP` on that same plant does return shipping `0`, because the free-shipping code clears the fee after the threshold check.
-- **Contradicts:** `docs/PRODUCT.md`: “Shipping costs $6.95, and is free when the subtotal is $50.00 or more.” `docs/APP-MAP.md`: `pl-bird` at exactly $50 is the free-shipping line.
-- **Suggested fix:** Treat the threshold as $50.00 or more, not strictly greater than $50.00.
-
-### F-12. The expired code SPRING5 is accepted
-
-- **Where:** `POST /api/cart/promo`
-- **Category:** Business rules in the API
-- **Impact:** A customer can still use `SPRING5` (ended 30 Apr 2026) and get 5% off, and the cart never shows the expired-code message.
-- **Evidence:** `tests/api/promo-codes.spec.ts` **N1 an expired code is refused…** and **N1 spring5 is refused as expired…** (executed): both `SPRING5` and `spring5` return `200`, expected `400` with `rule` `promo_invalid` and a detail that says the code has expired. `tests/e2e/promo-codes.spec.ts` **E1 an expired code is announced…** and `tests/a11y/promo.spec.ts` **X1 an expired-code refusal…** then find no alert containing “expired”.
-- **Contradicts:** `docs/features/promo-codes.md`: “Expired codes are refused, with a message that says the code has expired.” Codes table: `SPRING5` “30 Apr 2026 (expired)”. OpenAPI: expired or unknown codes are refused (`promo_invalid`).
-- **Suggested fix:** Refuse a code whose last valid day is before today, with `rule` `promo_invalid` and a detail that says it has expired, and leave any code already on the cart in place.
-
-### F-13. Another signed-in customer can open someone else’s order
-
-- **Where:** `GET /api/orders/{orderId}`
-- **Category:** Authorization
-- **Impact:** Ben can read Ava’s order, including her promo code and discount. His own cart does not inherit her code.
-- **Evidence:** `tests/api/promo-codes.spec.ts` **P1 another customer cannot see the code or the discounted order** (executed, re-run after the 404 check was ordered ahead of the cent check). Ben’s `GET /api/cart` stays `promoCode` null and `discount` 0. Ava’s `GET /api/orders/{orderId}` is `200` with `promoCode` `LEAFY10`. Ben’s `GET` of that same id is `200`, expected `404` with no `rule`.
-- **Contradicts:** `docs/PRODUCT.md`: “An order is private: only the customer who placed it can see it. Anyone else gets ‘Order not found’.” `docs/APP-MAP.md`: `GET /api/orders/{orderId}` returns 404 to anyone who didn’t place the order, and a 404 has no `rule`.
-- **Suggested fix:** Return 404 when the order’s customer is not the caller.
-
-### F-14. The cart hides the promo field once a code is applied, so a new code cannot replace it
-
-- **Where:** Cart page promo slot (`PromoCodeInput` when `appliedCode` is set)
-- **Category:** Pages
-- **Impact:** After Apply, the customer only sees Remove. They cannot type a second code. The documented behaviour is that a new code replaces the old one.
-- **Evidence:** `tests/e2e/promo-codes.spec.ts` **E1 FREESHIP replaces LEAFY10 and Remove restores paid shipping** (executed): after `LEAFY10` is applied, the promo textbox is gone. The API itself does replace codes: `tests/api/promo-codes.spec.ts` **B1 a later FREESHIP replaces LEAFY10** passed (`promoCode` `FREESHIP`, shipping `0`, total `12.50`). `web/cypress/ui/cart-promo.cy.ts` **U1-08** fails earlier because the field has no accessible name (F-15), so it never reaches the second Apply.
-- **Contradicts:** `docs/features/promo-codes.md`: “One code per cart. Applying a new code replaces the old one.”
-- **Suggested fix:** Keep a way to submit a new code while one is applied, and send that code to `POST /api/cart/promo` so the server replaces it.
-
-### F-15. The promo code field has no visible label and no accessible name
-
-- **Where:** `PromoCodeInput` on the cart
-- **Category:** Accessibility
-- **Impact:** A screen-reader user hears an unnamed text field. The only nearby text is “Have a promo code?”, and it is not a label for the field.
-- **Evidence:** `web/cypress/component/PromoCodeInput.cy.tsx` **C2-01** (and C2-02, C2-04, C2-05, C2-07, C2-09, C2-12, which look up the field by that name) under `npx cypress run --component --spec cypress/component/PromoCodeInput.cy.tsx` (executed). The accessible name of the input is empty. Screenshot: `web/cypress/screenshots/PromoCodeInput.cy.tsx/PromoCodeInput -- C2-01 shows a visible Promo code label and an Apply button (failed).png`. `tests/a11y/promo.spec.ts` **X1 cart with a line and an empty promo field**: axe `label`, **critical**, target the promo `<input>`. `tests/e2e/promo-codes.spec.ts` **E1 the promo field has a visible Promo code label…** does not find a textbox named “Promo code”. The same miss fails `web/cypress/ui/cart-promo.cy.ts` U1-01, U1-02, U1-05, U1-07, U1-08, and U1-09.
-- **Contradicts:** `docs/features/promo-codes.md`: “The code field has a visible label.” `docs/PRODUCT.md`: “every button and form field has a name a screen reader can announce.”
-- **Suggested fix:** Add a visible `<label for>` with the text “Promo code”.
-
-### F-16. A promo error is not announced to a screen reader
-
-- **Where:** `PromoCodeInput` error text
-- **Category:** Accessibility
-- **Impact:** When a code is refused, a sighted customer may see the message, but a screen-reader user is not told as soon as it appears.
-- **Evidence:** `web/cypress/component/PromoCodeInput.cy.tsx` **C2-06** (executed) shows “This code has expired.” **C2-11** (executed) fails because that text is not inside `role="alert"` or `aria-live="assertive"`. Screenshot: `web/cypress/screenshots/PromoCodeInput.cy.tsx/PromoCodeInput -- C2-11 announces the expired message with contrast at least 4.51 (failed).png`. The live API never produces this message today (F-12), so the cart page cannot announce it either.
-- **Contradicts:** `docs/features/promo-codes.md`: “When a code is refused, the message is announced to screen-reader users as soon as it appears.”
-- **Suggested fix:** Render the error with `role="alert"`.
+- **Impact:** A signed-out customer might stay on the cart instead of being asked to sign in. The failure screenshot shows the Sign in page, so this run does not confirm that the redirect is missing.
+- **Evidence:** **Executed:** `web/cypress/ui/cart.cy.ts`, CA-04 "sends a signed-out visit to /login?next=/cart", fails. The assertion read the address as `/cart` and expected `/login?next=/cart`. Screenshot: `web/cypress/screenshots/cart.cy.ts/Cart page -- CA-04 sends a signed-out visit to loginnext=cart (failed).png`. That picture shows `http://localhost:5173/login?next=/cart` and the heading "Sign in". The check reads `cy.location()` once, inside `.then`, so it does not wait for the address to change. OR-04 passed in the same run: a signed-out visit to `/orders` reached `/login?next=/orders`.
+- **Contradicts:** `docs/APP-MAP.md` (signed out, `/cart` redirects to `/login?next=/cart`). `docs/PRODUCT.md` lists the cart for signed-in customers.
+- **Suggested fix:** Confirm the address after the redirect has settled. This run's check ran while the address was still `/cart`.
 
 ## Suspicions — not yet tested
 
-Things that look different from `docs/PRODUCT.md` (or the API contract), from reading the code and walking the app once. Each one needs a test before it becomes a finding. "Seen" means it showed up once on the walk; "code" means it comes from reading the source only.
+Each line looked different from `docs/PRODUCT.md` while reading the code or walking the shop. None of these has a failing test yet.
 
-- **Plant page after a "Likes the same light" link** (Caching) — seen: the address bar said `/plants/pl-fiddle` while the page still showed Bird of Paradise at $50; code: `usePlant` caches every plant under the same key `['plant']`, so Add to cart may add the wrong plant. *May contradict:* "The plant page always shows the plant in the address bar, including after following a "Likes the same light" link."
-- **`PriceTag` / `formatPrice` two-decimal display** (Components) — **Evidence:** `web/cypress/component/PriceTag.cy.tsx`, rows PT-01, PT-02, PT-04, PT-07, PT-11, PT-12, PT-13 fail under `npm run cy:component` (executed). Examples: `amount={12.5}` renders `$12.5` not `$12.50`; `amount={50}` → `$50`; `amount={0}` → `$0`; `0.1 + 0.2` → `$0.3`; labelled mount renders `Subtotal: $12.5`. Same root as F-01 (`web/src/money.ts`). Screenshots under `web/cypress/screenshots/PriceTag.cy.tsx/`. *May contradict:* the same two-decimals line as F-01.
-- **`formatPrice` on other surfaces** (Components) — F-01 covers Browse (zero price); Cart (CP-02, CP-03, CP-05); PriceTag component rows above. **Now also executed** on the promo summary: `web/cypress/component/OrderSummary.cy.tsx` **C1-01** renders `−$4`, `$40`, and `Add $10 more…` (expected `−$4.00`, `$40.00`, `Add $10.00 more…`); **C1-03** renders `−$4.9` and `Add $1 more…` (expected `−$4.90` and `Add $1.00 more…`). `web/cypress/ui/checkout-promo.cy.ts` **U2-01** total `$18.2` (expected `$18.20`); **U2-05** total `$12.5` (expected `$12.50`). `web/cypress/ui/orders-promo.cy.ts` **U3-01** and **U3-02** show `$18.2` (expected `$18.20`). Screenshots under `web/cypress/screenshots/OrderSummary.cy.tsx/`, `checkout-promo.cy.ts/`, and `orders-promo.cy.ts/`. Same root as F-01. Still not tested: plant page, size deltas.
-- **Order page after signing out and in as another customer** (Caching / Authorization) — code: sign-out drops the cached cart and order list but not single orders (`['order', id]`), so the second customer may briefly see the first customer's order from the cache. *May contradict:* "An order is private: only the customer who placed it can see it. Anyone else gets "Order not found"" and "Signing out forgets the session on this device."
-- **`CareLevelBadge` for level 3** (Components) — seen: three-dot plants (Fiddle Leaf Fig, Calathea Orbifolia, String of Pearls) say "Moderate care"; code: `LABELS[Math.min(level, 2) - 1]`. *May contradict:* "Care level has three steps: 1 **Easy**, 2 **Moderate**, 3 **Expert**." and the contract's `careLevel` "1 Easy, 2 Moderate, 3 Expert."
-- **Plant page quantity after a "Likes the same light" link** (Pages) — code: quantity and size are page state that isn't reset when the plant id changes. *May contradict:* "**Quantity** starts at 1 …"
-- **Search box input** (Accessibility) — seen: the accessibility tree lists a `searchbox` with no name; code: "Search plants" is a visual hint, not a label. Browse axe scan (`tests/a11y/pages.spec.ts`, test "Browse") did not report a separate rule failure for it (not yet tested with a dedicated assertion). *May contradict:* "every button and form field has a name a screen reader can announce."
-- **Search box focus** (Accessibility) — code: `.input { outline: none; }` in `SearchBox.module.css`, with no other focus style on the input or form. *May contradict:* "everything works with the keyboard alone, and focus is always visible."
-- **Page titles** (Accessibility) — seen: every page, including Cart, Checkout and "Page not found", has the title "Fernly — plants for every windowsill". *May contradict:* "Fernly aims for **WCAG 2.1 level AA** on every page" (WCAG 2.4.2 Page Titled).
+- Following "Likes the same light" from Fiddle Leaf Fig to Rubber Plant left the address at `/plants/pl-rubber` while the heading still read "Fiddle Leaf Fig". `usePlant` caches every plant under the query key `['plant']`, with no plant id. May contradict line 35 (the plant page always shows the plant in the address bar, including after that link).
 
-### Rules to prove next
+## Questions — not bugs
 
-- Remaining sort modes (featured, price-asc, name, best rated) through `GET /api/plants` and the UI — **price-desc** covered by F-05 (executed).
-- Shipping at the boundary — **executed.** Exactly $50 fails: see **F-11**. A subtotal just below ($49.00 Fiddle + `LEAFY10`) still has shipping `$6.95` (`tests/api/promo-codes.spec.ts` **M3 a $49.00 subtotal still pays shipping after LEAFY10**, passed).
-- Order privacy at the API — **executed for the order.** Ben’s `GET /api/orders/{orderId}` returns 200: see **F-13**. Ben’s cart does not pick up Ava’s code (that check passed). `PATCH` / `DELETE` of another customer’s cart line is still not tested.
-- "Placing an order charges the cart as it is, lowers the stock, and empties the cart." and "Orders are listed newest first."
-- Search ignores case and matches Latin names; Low + Bright shows either; Pet-safe shows only pet-safe plants.
-- "Passwords have at least 8 characters; an email can have only one account."
-- Contract shape: every response field against the OpenAPI schemas, including two-decimal money values.
+Neither `docs/PRODUCT.md` nor the OpenAPI document answers these. They are not suspicions.
 
-### Questions — neither document answers
-
-- Should a placed order's "Paid" summary say "Add $28 more for free shipping."? It does today.
-- Should `/orders` and `/orders/:orderId` call the API while signed out? Both did, and got 401, before redirecting to sign in.
-- Should `POST /api/admin/reset` work without signing in? The contract declares no security for it.
-- Should `/login?next=//other-site.example` be allowed? `next` is only checked for a leading `/`.
-- Should the checkout accept fields that are only spaces? The form has `noValidate`, and the contract only asks for `minLength`.
-- Should a signed-in customer who opens `/login` or `/register` be redirected? The form shows again.
+- Line 33 describes Small, Medium, and Large. Chinese Money Plant's page showed only Small and Medium. It is open whether every plant must offer all three sizes.
+- Line 34 says the quantity starts at 1, and also that it can never go above the stock left. Chinese Money Plant has stock 0 and the stepper showed 1, with both buttons disabled and Add reading "Out of stock". It is open what the stepper should display at stock 0.
+- Lines 47 and 53 require a full shipping address and a password of at least 8 characters. Both forms set `noValidate` and do not check those rules in the page. The OpenAPI schemas do (`ShippingAddress` min lengths, `Register.password` minLength 8). It is open whether the page must block the submit or the API may.
+- Cart photos use `alt=""`. Line 62 requires alternative text on meaningful images, and it does not say whether a thumbnail beside the plant name counts as meaningful.

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { signOutInBrowser } from '../a11y/helpers/session.js';
+import { signOutInBrowser } from '../a11y/helpers/session';
 import { BrowsePage } from '../pages/BrowsePage';
 
 const SAVED_KEY = 'fernly_saved';

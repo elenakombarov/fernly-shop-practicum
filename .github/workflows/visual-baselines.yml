@@ -4,12 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       reason:
-        description: Why baselines are being refreshed (included in the commit message)
+        description: Why baselines are being refreshed (included in the commit message and PR)
         required: true
         type: string
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: visual-baselines-${{ github.ref }}
@@ -30,6 +31,9 @@ jobs:
       - run: npm ci
 
       - run: npx playwright install --with-deps chromium
+
+      - name: Use the local practice env
+        run: cp .env.example .env
 
       - name: Refresh visual snapshots
         run: npx playwright test --project=visual --update-snapshots=all
@@ -72,3 +76,37 @@ jobs:
             echo ""
             echo "[Open compare view](${compare_url})"
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Open pull request for baseline review
+        if: ${{ steps.commit.outputs.changed == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REASON: ${{ inputs.reason }}
+          BRANCH: ${{ steps.commit.outputs.branch }}
+          BASE_REF: ${{ github.ref_name }}
+          COMPARE_URL: ${{ steps.commit.outputs.compare_url }}
+        run: |
+          set -euo pipefail
+          body_file=$(mktemp)
+          {
+            echo "## Summary"
+            echo "Manual visual baseline refresh from the **Visual baselines** workflow."
+            echo
+            echo "**Reason:** ${REASON}"
+            echo
+            echo "Compare: ${COMPARE_URL}"
+            echo
+            echo "## Test plan"
+            echo "- [ ] Review screenshot diffs in this PR"
+            echo "- [ ] Confirm CI visual tests pass against the new Linux baselines"
+            echo "- [ ] Do not merge if diffs are unintentional"
+          } > "$body_file"
+
+          pr_url=$(gh pr create \
+            --base "$BASE_REF" \
+            --head "$BRANCH" \
+            --title "Visual baselines: ${REASON}" \
+            --body-file "$body_file")
+
+          echo "Opened PR for review: ${pr_url}" >> "$GITHUB_STEP_SUMMARY"
+          echo "pr_url=${pr_url}" >> "$GITHUB_OUTPUT"

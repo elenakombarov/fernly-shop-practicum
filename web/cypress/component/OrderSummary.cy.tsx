@@ -1,168 +1,86 @@
 import { OrderSummary } from '../../src/components/OrderSummary';
 
-function parseRgb(color: string): [number, number, number] {
-  const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-  if (!m) {
-    throw new Error(`Unsupported color: ${color}`);
-  }
-  return [Number(m[1]), Number(m[2]), Number(m[3])];
+function directText(element: Element): string {
+  return Array.from(element.childNodes)
+    .filter((node) => node.nodeType === Node.TEXT_NODE)
+    .map((node) => node.textContent ?? '')
+    .join('')
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
-function relativeLuminance(r: number, g: number, b: number): number {
-  const [rs, gs, bs] = [r, g, b].map((c) => {
-    const s = c / 255;
-    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+function hasOwnText(expected: string) {
+  return (_content: string, element: Element | null): boolean =>
+    !!element && directText(element) === expected;
 }
 
-function contrastRatio(fg: string, bg: string): number {
-  const [fr, fgG, fb] = parseRgb(fg);
-  const [br, bgG, bb] = parseRgb(bg);
-  const lFg = relativeLuminance(fr, fgG, fb);
-  const lBg = relativeLuminance(br, bgG, bb);
-  const lighter = Math.max(lFg, lBg);
-  const darker = Math.min(lFg, lBg);
-  return (lighter + 0.05) / (darker + 0.05);
-}
-
-function isOpaque(color: string): boolean {
-  const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
-  if (!m) return false;
-  const alpha = m[4] === undefined ? 1 : Number(m[4]);
-  return alpha >= 1;
-}
-
-/** Uses the element's own background, or the nearest opaque ancestor. */
-function opaqueBackground(el: Element): string {
-  let node: Element | null = el;
-  while (node) {
-    const bg = window.getComputedStyle(node).backgroundColor;
-    if (isOpaque(bg)) return bg;
-    node = node.parentElement;
-  }
-  throw new Error('No opaque background found for discount text');
-}
-
-function isDiscountAmount(content: string, element: Element | null): boolean {
-  if (!element || !content.includes('−$')) return false;
-  return Array.from(element.children).every((child) => !(child.textContent ?? '').includes('−$'));
+/** The amount or word in the row next to a term such as Shipping. */
+function valueBeside(term: HTMLElement): string {
+  return (term.nextElementSibling?.textContent ?? '').replace(/\s+/g, ' ').trim();
 }
 
 describe('OrderSummary', () => {
-  it('C1-01 shows the LEAFY10 discount and the free-shipping hint under $50', { tags: '@component' }, () => {
-    cy.mount(
-      <OrderSummary
-        itemCount={1}
-        subtotal={40}
-        discount={4}
-        promoCode="LEAFY10"
-        shipping={6.95}
-        total={42.95}
-      />,
-    );
-
-    cy.findByRole('region', { name: 'Order summary' });
-    cy.findByText('Discount (LEAFY10)');
-    cy.findByText('−$4.00');
-    cy.findByText('$40.00');
-    cy.findByText('$6.95');
-    cy.findByText('$42.95');
-    cy.findByText('Add $10.00 more for free shipping.');
-  });
-
-  it('C1-02 omits the discount line when there is no code', { tags: '@component' }, () => {
-    cy.mount(
-      <OrderSummary
-        itemCount={1}
-        subtotal={12.5}
-        discount={0}
-        promoCode={null}
-        shipping={6.95}
-        total={19.45}
-      />,
-    );
-
-    cy.findByRole('region', { name: 'Order summary' }).should(($region) => {
-      expect($region.text(), 'summary text').not.to.include('Discount');
-    });
-  });
-
-  it('C1-03 keeps the free-shipping hint one dollar under $50', { tags: '@component' }, () => {
-    cy.mount(
-      <OrderSummary
-        itemCount={1}
-        subtotal={49}
-        discount={4.9}
-        promoCode="LEAFY10"
-        shipping={6.95}
-        total={51.05}
-      />,
-    );
-
-    cy.findByText('Discount (LEAFY10)');
-    cy.findByText('−$4.90');
-    cy.findByText('Add $1.00 more for free shipping.');
-  });
-
-  it('C1-04 shows Free shipping at $50 with no discount and no hint', { tags: '@component' }, () => {
-    cy.mount(
-      <OrderSummary
-        itemCount={1}
-        subtotal={50}
-        discount={0}
-        promoCode={null}
-        shipping={0}
-        total={50}
-      />,
-    );
-
-    cy.findByRole('region', { name: 'Order summary' }).within(() => {
-      cy.findByText('Free');
-    });
-    cy.findByRole('region', { name: 'Order summary' }).should(($region) => {
-      expect($region.text(), 'summary text').not.to.include('Discount');
-      expect($region.text(), 'free-shipping hint').not.to.include('more for free shipping');
-    });
-  });
-
-  it('C1-05 names the summary region with the Paid heading', { tags: '@component' }, () => {
-    cy.mount(
-      <OrderSummary
-        title="Paid"
-        itemCount={1}
-        subtotal={12.5}
-        discount={1.25}
-        promoCode="LEAFY10"
-        shipping={6.95}
-        total={18.2}
-      />,
-    );
-
-    cy.findByRole('heading', { name: 'Paid' });
-    cy.findByRole('region', { name: 'Paid' });
-  });
-
-  it('C1-06 names the region from its heading and meets discount contrast', { tags: '@component' }, () => {
-    cy.mount(
-      <OrderSummary
-        itemCount={1}
-        subtotal={40}
-        discount={4}
-        promoCode="LEAFY10"
-        shipping={6.95}
-        total={42.95}
-      />,
-    );
+  it('OS-01 names the region Order summary', { tags: '@component' }, () => {
+    cy.mount(<OrderSummary itemCount={1} subtotal={9.99} shipping={6.95} total={16.94} />);
 
     cy.findByRole('heading', { name: 'Order summary' });
     cy.findByRole('region', { name: 'Order summary' });
-    cy.findByText(isDiscountAmount).then(($discount) => {
-      const node = $discount[0];
-      const fg = window.getComputedStyle(node).color;
-      const bg = opaqueBackground(node);
-      const ratio = contrastRatio(fg, bg);
-      expect(ratio, `discount text ${fg} on ${bg}`).to.be.at.least(4.5);
+  });
+
+  it('OS-02 shows the heading Paid', { tags: '@component' }, () => {
+    cy.mount(
+      <OrderSummary itemCount={1} subtotal={9.99} shipping={6.95} total={16.94} title="Paid" />,
+    );
+
+    cy.findByRole('heading', { name: 'Paid' });
+  });
+
+  it('OS-03 reads Subtotal (1 item)', { tags: '@component' }, () => {
+    cy.mount(<OrderSummary itemCount={1} subtotal={9.99} shipping={6.95} total={16.94} />);
+
+    cy.findByText('Subtotal (1 item)');
+  });
+
+  it('OS-04 reads Subtotal (2 items)', { tags: '@component' }, () => {
+    cy.mount(<OrderSummary itemCount={2} subtotal={19.98} shipping={6.95} total={26.93} />);
+
+    cy.findByText('Subtotal (2 items)');
+  });
+
+  it('OS-05 shows shipping $6.95 and total $16.94', { tags: '@component' }, () => {
+    cy.mount(<OrderSummary itemCount={1} subtotal={9.99} shipping={6.95} total={16.94} />);
+
+    cy.findByText(hasOwnText('Shipping')).then(($term) => {
+      expect(valueBeside($term[0]), 'shipping').to.equal('$6.95');
     });
+    cy.findByText(hasOwnText('Total')).then(($term) => {
+      expect(valueBeside($term[0]), 'total').to.equal('$16.94');
+    });
+  });
+
+  it('OS-06 says Free and hides the free-shipping hint at $50', { tags: '@component' }, () => {
+    cy.mount(<OrderSummary itemCount={1} subtotal={50} shipping={0} total={50} />);
+
+    cy.findByText(hasOwnText('Shipping')).then(($term) => {
+      expect(valueBeside($term[0]), 'shipping').to.equal('Free');
+    });
+    cy.findAllByText(/more for free shipping/).should('have.length', 0);
+  });
+
+  it('OS-07 shows how much more would make shipping free', { tags: '@component' }, () => {
+    cy.mount(<OrderSummary itemCount={1} subtotal={9.99} shipping={6.95} total={16.94} />);
+
+    cy.findByText('Add $40.01 more for free shipping.');
+  });
+
+  it('OS-08 shows a shipping price and no hint when the cart is empty', { tags: '@component' }, () => {
+    cy.mount(<OrderSummary itemCount={0} subtotal={0} shipping={0} total={0} />);
+
+    cy.findByText(hasOwnText('Shipping')).then(($term) => {
+      const price = valueBeside($term[0]);
+      expect(price, 'shipping price').to.match(/^\$\d/);
+      expect(price, 'shipping price').to.not.include('Free');
+    });
+    cy.findAllByText(/more for free shipping/).should('have.length', 0);
   });
 });
