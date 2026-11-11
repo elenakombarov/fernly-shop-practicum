@@ -6,6 +6,18 @@ on:
   workflow_dispatch:
 
 jobs:
+  gates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prove the pipeline gates
+        run: bash scripts/test-gates.sh
+
   cypress:
     runs-on: ubuntu-latest
     steps:
