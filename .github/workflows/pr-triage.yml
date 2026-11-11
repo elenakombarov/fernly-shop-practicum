@@ -120,6 +120,18 @@ jobs:
           Never modify web/src, api/src, .github, .cursor, or scripts.
           Never print the API key.
           Never weaken a requirement from docs/PRODUCT.md or the OpenAPI document to match the diff.
+
+          Do not run npm install.
+          Do not start API or web servers.
+          Do not launch background processes.
+          Only curl OpenAPI if the API is already running.
+          Otherwise use docs/PRODUCT.md, docs/APP-MAP.md, and docs/features.
+          Mark missing contract details as assumed — ask.
+
+          After you successfully write docs/test-plans/<branch>.md, stop immediately.
+          Do not run additional tools.
+          Do not wait for background tasks or shell notifications.
+          Do not continue analysis or generate extra commentary.
           EOF
 
       - name: Run the plan agent
