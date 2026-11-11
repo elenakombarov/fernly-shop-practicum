@@ -3,25 +3,25 @@
   "hooks": {
     "beforeShellExecution": [
       {
-        "command": ".cursor/hooks/guard-approvals.cmd",
+        "command": "node .cursor/hooks/run-bash.mjs guard-approvals",
         "failClosed": true
       }
     ],
     "preToolUse": [
       {
-        "command": ".cursor/hooks/guard-test-assertions.cmd",
+        "command": "node .cursor/hooks/run-bash.mjs guard-test-assertions",
         "matcher": "Write",
         "failClosed": true
       }
     ],
     "afterFileEdit": [
       {
-        "command": ".cursor/hooks/guard-test-assertions.cmd",
+        "command": "node .cursor/hooks/run-bash.mjs guard-test-assertions",
         "matcher": "Write",
         "failClosed": true
       },
       {
-        "command": ".cursor/hooks/guard-constitution.cmd",
+        "command": "node .cursor/hooks/run-bash.mjs guard-constitution",
         "matcher": "Write",
         "failClosed": true
       }
