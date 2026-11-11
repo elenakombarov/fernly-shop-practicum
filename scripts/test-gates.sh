@@ -156,6 +156,63 @@ check "agent-guard: tests and FINDINGS.md allowed" 0 \
   bash scripts/agent-guard.sh "$P_TESTS" 'tests/*' 'FINDINGS.md'
 
 # ---------------------------------------------------------------------------
+# capture-plan-patch — plan packaging (incidental lockfile vs unexpected)
+# Invoke the ROOT script inside the worktree so uncommitted scripts/ noise
+# is not itself treated as an unexpected agent change.
+# ---------------------------------------------------------------------------
+CAPTURE="$ROOT/scripts/capture-plan-patch.sh"
+
+git -C "$WT" reset --hard HEAD >/dev/null 2>&1
+git -C "$WT" clean -fd >/dev/null 2>&1
+mkdir -p "$WT/docs/test-plans"
+printf '%s\n' '# gates capture plan' >"$WT/docs/test-plans/gates-capture.md"
+if (cd "$WT" && bash "$CAPTURE" "$WT/capture-plan-ok.patch") \
+  && grep -q 'docs/test-plans/gates-capture.md' "$WT/capture-plan-ok.patch" \
+  && ! grep -q 'package-lock\.json' "$WT/capture-plan-ok.patch"; then
+  pass_line "capture-plan-patch: valid plan accepted"
+else
+  fail_line "capture-plan-patch: valid plan accepted"
+fi
+
+git -C "$WT" reset --hard HEAD >/dev/null 2>&1
+git -C "$WT" clean -fd >/dev/null 2>&1
+mkdir -p "$WT/docs/test-plans"
+printf '%s\n' '# gates capture plan' >"$WT/docs/test-plans/gates-capture.md"
+lock_head=$(git -C "$WT" rev-parse "HEAD:package-lock.json")
+printf '\n# gates incidental lock churn\n' >>"$WT/package-lock.json"
+if (cd "$WT" && bash "$CAPTURE" "$WT/capture-plan-lock.patch") \
+  && [ "$(git -C "$WT" hash-object package-lock.json)" = "$lock_head" ] \
+  && git -C "$WT" diff --quiet -- package-lock.json \
+  && grep -q 'docs/test-plans/gates-capture.md' "$WT/capture-plan-lock.patch" \
+  && ! grep -q 'package-lock\.json' "$WT/capture-plan-lock.patch"; then
+  pass_line "capture-plan-patch: incidental package-lock excluded"
+else
+  fail_line "capture-plan-patch: incidental package-lock excluded"
+fi
+
+git -C "$WT" reset --hard HEAD >/dev/null 2>&1
+git -C "$WT" clean -fd >/dev/null 2>&1
+mkdir -p "$WT/docs/test-plans" "$WT/web/src"
+printf '%s\n' '# gates capture plan' >"$WT/docs/test-plans/gates-capture.md"
+printf '%s\n' '// unexpected' >"$WT/web/src/gates-capture-probe.ts"
+if (cd "$WT" && bash "$CAPTURE" "$WT/capture-plan-bad.patch"); then
+  fail_line "capture-plan-patch: unexpected app change rejected"
+else
+  pass_line "capture-plan-patch: unexpected app change rejected"
+fi
+
+git -C "$WT" reset --hard HEAD >/dev/null 2>&1
+git -C "$WT" clean -fd >/dev/null 2>&1
+mkdir -p "$WT/docs/test-plans" "$WT/.github/workflows"
+printf '%s\n' '# gates capture plan' >"$WT/docs/test-plans/gates-capture.md"
+printf '%s\n' 'name: gates-probe' >"$WT/.github/workflows/gates-capture-probe.yml"
+if (cd "$WT" && bash "$CAPTURE" "$WT/capture-plan-wf.patch"); then
+  fail_line "capture-plan-patch: unexpected workflow change rejected"
+else
+  pass_line "capture-plan-patch: unexpected workflow change rejected"
+fi
+
+# ---------------------------------------------------------------------------
 # hooks — P81 (guard-approvals) and P77 (constitution + assertion)
 # ---------------------------------------------------------------------------
 APPROVALS=.cursor/hooks/guard-approvals.sh

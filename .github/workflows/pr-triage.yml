@@ -150,14 +150,11 @@ jobs:
           if [ ! -s "$RUNNER_TEMP/plan.md" ]; then
             echo "The plan agent produced no output." > "$RUNNER_TEMP/plan.md"
           fi
-          # Drop ephemeral inputs and anything in person-only trees before packaging.
+          # Drop workflow-only inputs, then package only docs/test-plans.
+          # capture-plan-patch.sh fails on unexpected paths; restores incidental
+          # package-lock.json churn from agent npm install.
           rm -f pr-text.md pr.diff branch-name.txt
-          git restore --source=HEAD --worktree --staged -- \
-            .github .cursor scripts web/src api/src 2>/dev/null || true
-          git clean -fd -- .github .cursor scripts web/src api/src 2>/dev/null || true
-          git add -A
-          git diff --cached --binary > "$RUNNER_TEMP/agent.patch"
-          bash scripts/agent-guard.sh "$RUNNER_TEMP/agent.patch" 'docs/test-plans/*'
+          bash scripts/capture-plan-patch.sh "$RUNNER_TEMP/agent.patch"
 
       - name: Upload the plan artifact
         if: ${{ success() && steps.budget.outputs.ran == 'true' }}
