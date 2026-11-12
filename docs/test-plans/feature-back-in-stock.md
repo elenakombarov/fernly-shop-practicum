@@ -69,6 +69,7 @@ Normal rows for that file still appear under Playwright API (and related UI/E2E/
 | `.cursor/hooks/guard-baselines.sh` | New agent shell guard; not customer-facing. |
 | `.cursor/hooks/guard-constitution.sh` | Mode bit only; agent hook. |
 | `.cursor/hooks/guard-test-assertions.sh` | Mode bit only; agent hook. |
+| `FINDINGS.md` | QA findings log; not a runtime surface. |
 | `docs/features/back-in-stock.md` | Feature oracle doc; informs rows above, not a runtime surface. |
 | `docs/features/promo-codes.md` | Feature oracle doc; informs rows above, not a runtime surface. |
 | `docs/test-plans/feature-back-in-stock.md` | Prior/plan artifact in the diff; not customer-facing. |
@@ -77,16 +78,24 @@ Normal rows for that file still appear under Playwright API (and related UI/E2E/
 | `scripts/agent-guard.sh` | Script wiring; not customer-facing. |
 | `scripts/test-gates.sh` | CI/script gate; not customer-facing. |
 | `tests/a11y/a11y-baseline.json` | Baseline data for a11y project; not a new product behavior. |
+| `tests/a11y/baseline.ts` | A11y helper/baseline wiring; not customer-facing product. |
+| `tests/a11y/pages.spec.ts` | Existing/proposed a11y spec; triage does not author specs. |
 | `tests/a11y/promo.spec.ts` | Existing/proposed a11y spec file; triage does not author specs. |
 | `tests/api/promo-codes.spec.ts` | Existing/proposed API spec file; triage does not author specs. |
+| `tests/e2e/back-in-stock.spec.ts` | Existing/proposed E2E spec; triage does not author specs. |
 | `tests/e2e/promo-codes.spec.ts` | Existing/proposed E2E spec file; triage does not author specs. |
 | `tests/pages/*.ts` | Playwright page objects; support harness only. |
+| `web/cypress/component/NotifyForm.cy.tsx` | Existing/proposed Cypress spec; triage does not author specs. |
+| `web/cypress/component/OrderSummary.cy.tsx` | Existing/proposed Cypress spec; triage does not author specs. |
 | `web/cypress/component/PromoCodeInput.cy.tsx` | Existing/proposed Cypress spec; triage does not author specs. |
+| `web/cypress/component/StockBadge.cy.tsx` | Existing/proposed Cypress spec; triage does not author specs. |
 | `web/cypress/fixtures/**` | Fixtures for Cypress; not product behavior themselves. |
 | `web/cypress/test-design/**` | Design tables for another skill; not this plan’s output. |
+| `web/cypress/ui/browse-stock-badge.cy.ts` | Existing/proposed UI spec; triage does not author specs. |
 | `web/cypress/ui/cart-promo.cy.ts` | Existing/proposed UI spec; triage does not author specs. |
 | `web/cypress/ui/checkout-promo.cy.ts` | Existing/proposed UI spec; triage does not author specs. |
 | `web/cypress/ui/orders-promo.cy.ts` | Existing/proposed UI spec; triage does not author specs. |
+| `web/cypress/ui/plant-notify.cy.ts` | Existing/proposed UI spec; triage does not author specs. |
 | `web/src/components/*.module.css` | Styles covered indirectly by component/UI/a11y rows. |
 | `web/src/types.ts` | Type fields for `discount`/`promoCode`; behavior covered via UI/API rows. |
 | `web/vite.config.ts` | Dev/Cypress port split; not customer-facing shop behavior. |
