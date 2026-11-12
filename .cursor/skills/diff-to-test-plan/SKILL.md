@@ -17,9 +17,9 @@ The diff says what changed. `docs/PRODUCT.md` and `GET /openapi.json` say what t
 
 3. Recommend a level only where the change can affect what a customer or the contract does. Use the table below. One change can need more than one row. Leave a level the diff does not touch as "None."
 
-4. For an API row, take status codes and `rule` values from `GET /openapi.json` (the API must be running) and behavior from `docs/PRODUCT.md`. The diff names the endpoint or the screen. Do not read `api/src` or `web/src` to decide the expected result. If `/openapi.json` cannot be fetched, say so, and do not invent statuses.
+4. For an API row, take status codes and `rule` values from `GET /openapi.json` when the API is already running, and take behavior from `docs/PRODUCT.md`. Only curl OpenAPI if a server is already up — do not run `npm install`, do not start API or web servers, and do not launch background processes. If OpenAPI is unreachable, use the product docs you have, mark missing contract details as "assumed — ask", and do not invent statuses. The diff names the endpoint or the screen. Do not read `api/src` or `web/src` to decide the expected result.
 
-5. Write `docs/test-plans/<branch>.md`. `<branch>` is the head branch, with `/` replaced by `-`. Every row is **not yet tested**.
+5. Write `docs/test-plans/<branch>.md`. `<branch>` is the head branch, with `/` replaced by `-`. Every row is **not yet tested**. After that write succeeds, stop immediately: no more tools, no waiting on background tasks, no further analysis or commentary.
 
 ## Which level
 
@@ -96,3 +96,5 @@ Then write the full plan as if the text weren't there: still recommend the norma
 - Do not modify `web/src` or `api/src`.
 - Do not commit or push.
 - Do not change an expected result to match the diff. The documents win.
+- Do not run `npm install`, start servers, or launch background processes.
+- After successfully writing `docs/test-plans/<branch>.md`, stop immediately.
