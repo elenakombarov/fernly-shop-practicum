@@ -1,0 +1,74 @@
+{
+  "repo": "elenakombarov/fernly-shop-practicum",
+  "generatedAt": "2026-11-09T20:00:00Z",
+  "runUrl": "https://github.com/elenakombarov/fernly-shop-practicum/actions/runs/99",
+  "focusPr": 42,
+  "localRun": {
+    "failed": 5,
+    "knownBugs": 0,
+    "visualChanges": 0,
+    "findings": 12,
+    "totals": {
+      "Cypress component": {
+        "passed": 1,
+        "failed": 1,
+        "knownBugs": 0,
+        "skipped": 0,
+        "status": "ok"
+      },
+      "Playwright api": {
+        "passed": 0,
+        "failed": 2,
+        "knownBugs": 0,
+        "skipped": 0,
+        "status": "ok"
+      },
+      "Playwright e2e": {
+        "passed": 0,
+        "failed": 1,
+        "knownBugs": 0,
+        "skipped": 0,
+        "status": "ok"
+      }
+    }
+  },
+  "rows": [
+    {
+      "number": 42,
+      "title": "Block 13 page objects and visual CI",
+      "url": "https://github.com/elenakombarov/fernly-shop-practicum/pull/42",
+      "branch": "block13-page-objects",
+      "rowsRight": 4,
+      "rowsReviewed": 5,
+      "minToPlan": 12.5,
+      "minToQaReport": 40.2,
+      "agentMin": 55.0,
+      "testsMin": 18.3,
+      "ciStatus": "failure",
+      "artifacts": [
+        "a11y-report",
+        "cypress-results",
+        "playwright-reports",
+        "qa-report"
+      ],
+      "findings": 0,
+      "falseAlarms": 0
+    },
+    {
+      "number": 7,
+      "title": "Earlier plan-approved sample",
+      "url": "https://github.com/elenakombarov/fernly-shop-practicum/pull/7",
+      "branch": "sample-plan",
+      "rowsRight": 2,
+      "rowsReviewed": 2,
+      "minToPlan": 8.0,
+      "minToQaReport": null,
+      "agentMin": 20.0,
+      "testsMin": 10.0,
+      "ciStatus": "success",
+      "artifacts": ["playwright-reports"],
+      "findings": 1,
+      "falseAlarms": 0
+    }
+  ]
+}
