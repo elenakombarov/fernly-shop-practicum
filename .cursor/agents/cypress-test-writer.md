@@ -30,7 +30,7 @@ The path of an approved table under `web/cypress/test-design/`.
    - Component specs: `npm run cy:component`
    - Page specs: `npm run cy:ui`
 
-   UI specs visit `http://localhost:5173`. If that server is not running, say so and stop. Do not record product findings from a runner or server failure.
+   UI specs visit `http://localhost:5173`. If that server is not running, prefer stopping with that fact rather than starting servers. If you must start the web app, start it in the background only, record the exact PID, and if cleanup is required use only `kill <that-pid>`. Never use `pkill -f`, `killall`, broad process-name matching, or killing process groups (those patterns can match and terminate your own shell). On ephemeral CI runners, skip server cleanup.
 
 5. Classify each failure.
 
@@ -53,6 +53,8 @@ The path of an approved table under `web/cypress/test-design/`.
 
    Then list skipped "assumed — ask" rows, and any suspicion entries you added.
 
+7. After writing the requested tests and any FINDINGS.md updates (and the one suite run / at most two fixes), stop immediately. Do not run more tools for process cleanup or extra commentary.
+
 ## Guardrails
 
 - Write only under `web/cypress/` and `FINDINGS.md`.
@@ -60,3 +62,5 @@ The path of an approved table under `web/cypress/test-design/`.
 - Never weaken an assertion.
 - Never add `@known-bug` without human confirmation.
 - A suspicion is not a confirmed finding. Leave confirmed findings as they are.
+- Never use `pkill -f`, `killall`, broad process-name matching, or killing process groups.
+- If a background server must be stopped, kill only the exact PID recorded at start; prefer skipping cleanup on ephemeral CI.

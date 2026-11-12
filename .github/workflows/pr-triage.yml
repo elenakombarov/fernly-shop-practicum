@@ -339,8 +339,16 @@ jobs:
 
           Never start anything that keeps running in the foreground:
           npm start, npm run start:web, cypress open, playwright show-report.
-          For UI specs that need the web app, start it in the background and stop
-          it when the run ends.
+          Prefer not launching background servers. If a UI spec truly needs the
+          web app and it is not already up, start only that server in the
+          background, record its PID, and if you must stop it later use only
+          that exact PID (kill <pid>). Never use pkill -f, killall, broad
+          process-name matching, or killing process groups for cleanup.
+          On ephemeral CI runners, prefer skipping server cleanup entirely.
+
+          After writing the requested tests and any FINDINGS.md updates, stop
+          immediately. Do not run additional tools for cleanup commentary or
+          background-task handling.
 
           Do not commit, push, or call gh.
           Never modify web/src, api/src, .github, .cursor, or scripts.
