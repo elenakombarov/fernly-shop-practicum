@@ -117,3 +117,13 @@ export function isBlocking(element: ClassifiedElement): boolean {
   if (element.status === 'expired') return true;
   return element.status === 'new' && (element.impact === 'serious' || element.impact === 'critical');
 }
+
+/** Human-readable expect() message for blocking axe findings. */
+export function formatBlockingViolations(blocking: readonly ClassifiedElement[]): string {
+  if (blocking.length === 0) return 'No blocking accessibility violations.';
+  return blocking
+    .map((item) =>
+      [item.page, item.status, item.impact ?? 'none', item.rule, item.target].join(' '),
+    )
+    .join('\n');
+}
