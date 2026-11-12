@@ -41,49 +41,52 @@ Normal rows for that file still appear under Playwright API (and related UI/E2E/
 
 | ID | changed path | what to prove | source | spec |
 | --- | --- | --- | --- | --- |
-| E2E-01 | Out-of-stock notify on plant page (real API) | Open a known out-of-stock plant on `WEB_URL`. Sign up with a full email; page confirms that address. Second sign-up same email (different case) is refused with **"You're already on the list"**. In-stock plant does not offer the form. No account required (signed out). | `docs/features/back-in-stock.md` | `tests/e2e/back-in-stock.spec.ts` |
-| E2E-02 | Promo on cart → checkout → order (real API) | Sign in, add a plant, apply `leafy10` / `LEAFY10`: discount is % of plant subtotal only (shipping unchanged unless free-shipping threshold); summary matches. Replace with `FREESHIP` → shipping $0. Place order: receipt keeps discount/code; cart empty and code cleared. Expired `SPRING5` refused with expired wording, announced. Unknown code refused. | `docs/features/promo-codes.md`; `docs/PRODUCT.md` shipping $6.95 / free at $50 subtotal before discount | `tests/e2e/promo-codes.spec.ts` |
+| E2E-01 | Plant notify → real API | On an out-of-stock plant at `WEB_URL`, sign up with a full email; page confirms that address. Second sign-up same email (different case) refused with "You're already on the list". In-stock plant has no form. | `docs/features/back-in-stock.md` | `tests/e2e/back-in-stock.spec.ts` |
+| E2E-02 | Cart promo → checkout → order | Signed in: apply `LEAFY10` (and lowercase `leafy10`); discount is % of plant subtotal only, shipping unchanged unless free-shipping threshold or `FREESHIP`; place order; order shows discount and code; cart no longer has the code. `SPRING5` refused as expired. Subtotal under/over $50 free-shipping rule is decided **before** discount. | `docs/features/promo-codes.md`; `docs/PRODUCT.md` shipping $6.95 / free at $50+ | `tests/e2e/promo-codes.spec.ts` |
 
 ## Playwright API tests
 
 | ID | changed path | what to prove | source | spec |
 | --- | --- | --- | --- | --- |
-| API-01 | `POST /api/plants/{plantId}/notify` (`api/src/features/back-in-stock.ts`) | **Positive:** out-of-stock plant + full email like `name@example.com` → success body with subscribed status, plant id, and email (**HTTP success status assumed — ask**; OpenAPI unreachable). **Invalid input:** `a@b`, `name@`, empty/missing email → refused (**status/`rule` assumed — ask**). **In stock:** refused (**rule/message assumed — ask**; feature: API refuses in-stock). **Unknown id:** **404 assumed — ask**. **Duplicate:** same email/plant ignoring case → refused with "You're already on the list" (**409/`already_subscribed` assumed — ask**). | `docs/features/back-in-stock.md`; Swagger unavailable | `tests/api/back-in-stock.spec.ts` |
-| API-02 | `POST /api/cart/promo` (`api/src/features/promo-codes.ts`, `api/src/promos.ts`, store/schemas) | Signed-in cart: `LEAFY10` → 10% off **plant subtotal only**, never shipping; cents rounded; `promoCode`/`discount` on cart. `FREESHIP` → shipping 0, discount 0. Free shipping at $50 decided on subtotal **before** discount. Case-insensitive codes; new code replaces old. **Invalid:** empty code, empty cart, unknown/expired (`SPRING5` detail says expired) — **HTTP 400 and `rule` values (`validation_error` / `empty_cart` / `promo_invalid`) assumed — ask**. **401** without auth — **`auth_required` assumed — ask**. | `docs/features/promo-codes.md`; `docs/PRODUCT.md` shipping rules | `tests/api/promo-codes.spec.ts` |
-| API-03 | `DELETE /api/cart/promo` | Signed-in: removes code; cart `promoCode` null, `discount` 0, shipping/total recalculated without promo. **401** when signed out — **assumed — ask**. | `docs/features/promo-codes.md` Remove | `tests/api/promo-codes.spec.ts` |
-| API-04 | Orders keep promo; cart clears after place | After promo cart, `POST /api/orders` order includes `discount` and `promoCode`; subsequent cart has no code. Private order: other user gets not found. | `docs/features/promo-codes.md`; `docs/PRODUCT.md` order privacy / charges cart as it is | `tests/api/promo-codes.spec.ts` |
+| API-01 | `POST /api/plants/{plantId}/notify` (`api/src/features/back-in-stock.ts`) | Success for out-of-stock plant + full email (`name@example.com`) — **assumed — ask** exact status and body shape. Invalid email (`a@b`, `name@`) refused — **assumed — ask** status/`rule`. In-stock plant refused — **assumed — ask** status/`rule`. Unknown `plantId` → **assumed — ask** whether 404. Duplicate email same plant (case-insensitive) refused with customer-facing "You're already on the list" — **assumed — ask** status/`rule`. No auth required. | `docs/features/back-in-stock.md`; OpenAPI unreachable | `tests/api/back-in-stock.spec.ts` |
+| API-02 | `POST /api/cart/promo` (`api/src/features/promo-codes.ts`, `api/src/promos.ts`, store/schemas) | Signed-in cart with lines: `LEAFY10` / `leafy10` applies 10% off **plants only** (not shipping); response includes `discount` and `promoCode`. `FREESHIP` makes shipping 0. Free-shipping-from-$50 uses subtotal **before** discount. Empty cart refused — **assumed — ask** status/`rule`. Unknown / expired (`SPRING5`) refused with expired message where applicable — **assumed — ask** status/`rule`. Unsigned → **assumed — ask** 401/`rule`. Empty code string refused — **assumed — ask**. | `docs/features/promo-codes.md`; `docs/PRODUCT.md` shipping rules; OpenAPI unreachable | `tests/api/promo-codes.spec.ts` |
+| API-03 | `DELETE /api/cart/promo` | Signed-in: removes code; cart `discount` 0 / `promoCode` null. Unsigned → **assumed — ask** 401/`rule`. | `docs/features/promo-codes.md`; OpenAPI unreachable | `tests/api/promo-codes.spec.ts` |
+| API-04 | Cart/order schemas (`discount`, `promoCode`) | After place order with a promo, order payload keeps `discount` and `promoCode`; cart afterward has no code. | `docs/features/promo-codes.md` | `tests/api/promo-codes.spec.ts` |
 
 ## Accessibility tests
 
 | ID | changed path | what to prove | source | spec |
 | --- | --- | --- | --- | --- |
-| A11Y-01 | Plant notify + browse stock badge | axe on plant page with notify form (out of stock) and after confirmation/error; browse with low-stock badge visible. Names for email field and Notify me; meaningful controls; contrast ≥ 4.5:1; keyboard + visible focus. | `docs/PRODUCT.md` WCAG 2.1 AA; `docs/features/back-in-stock.md` | `tests/a11y/pages.spec.ts` |
-| A11Y-02 | Cart / checkout / order promo UI | axe on cart with empty promo field, applied code + Remove, and expired refusal on screen; checkout and paid order with discount line. Promo field has accessible name from visible label; refusal in alert/live region; contrast on discount/error text. | `docs/PRODUCT.md` WCAG 2.1 AA; `docs/features/promo-codes.md` visible label + announced refusal | `tests/a11y/pages.spec.ts` |
+| A11Y-01 | Plant page with notify form | Out-of-stock plant: email field and Notify me have accessible names; keyboard-only submit; visible focus; axe scan on plant page with form. | `docs/PRODUCT.md` WCAG 2.1 AA; `docs/features/back-in-stock.md` | `tests/a11y/pages.spec.ts` |
+| A11Y-02 | Cart promo field | Promo code control has a visible label and accessible name; refused-code message announced when it appears; keyboard Apply/Remove; contrast; axe on cart with promo UI. | `docs/features/promo-codes.md`; `docs/PRODUCT.md` WCAG 2.1 AA | `tests/a11y/pages.spec.ts` |
+| A11Y-03 | Stock badge / Out of stock copy | Low-stock and out-of-stock text is readable (contrast) and not only conveyed by color; browse/plant cards still meet AA for names on save and links. | `docs/PRODUCT.md` WCAG 2.1 AA; `docs/features/back-in-stock.md` badge with tags | `tests/a11y/pages.spec.ts` |
 
 ## Seen, no test
 
 | Path | Why no test |
 | --- | --- |
-| `.cursor/hooks/guard-*.sh` | Agent/shell guards; no customer-facing behavior |
-| `scripts/agent-guard.sh`, `scripts/test-gates.sh` | CI/agent tooling |
-| `docs/features/back-in-stock.md`, `docs/features/promo-codes.md` | Feature oracles cited by rows above, not runtime |
-| `docs/test-plans/feature/promo-codes.md`, `docs/test-plans/feature/promo-codes-results.md` | Prior plan/results docs |
-| `tests/a11y/a11y-baseline.json`, `tests/a11y/promo.spec.ts`, `tests/api/promo-codes.spec.ts`, `tests/e2e/promo-codes.spec.ts` | Existing or added test assets; this plan does not author new code |
-| `tests/pages/*.ts` | Playwright page objects supporting tests, not product behavior alone |
-| `web/cypress/component/PromoCodeInput.cy.tsx`, `web/cypress/ui/*promo*.cy.ts`, `web/cypress/fixtures/**`, `web/cypress/test-design/**` | Cypress fixtures/design/specs already in the diff; triage recommends coverage, does not rewrite them |
-| `web/src/components/*.module.css` | Styled by component/UI rows for the matching components |
-| `web/src/types.ts` | Type shapes only; behavior covered via API/UI rows for `discount` / `promoCode` |
-| `web/vite.config.ts` | Dev/Cypress port split; no customer contract |
-| `api/src/schemas.ts`, `api/src/store.ts` | Exercised through Playwright API rows for cart/order/promo |
-
-## Assumed — ask
-
-| ID | Question |
-| --- | --- |
-| ASK-01 | Exact success HTTP status and JSON schema for `POST /api/plants/{plantId}/notify` (Swagger down). |
-| ASK-02 | Exact HTTP status and `rule` for invalid notify emails, in-stock notify, unknown `plantId`, and duplicate subscribe. |
-| ASK-03 | Exact HTTP status and `rule` for `POST`/`DELETE /api/cart/promo` success, 400 variants, and 401 (`auth_required` / `promo_invalid` / `empty_cart` / `validation_error` only named in unreachable OpenAPI). |
-| ASK-04 | Whether spaces around a promo code are accepted after trim (feature doc silent). |
-| ASK-05 | `OrderSummary` when `discount` > 0 but `promoCode` is null (label format). |
-| ASK-06 | Free-shipping hint copy while `FREESHIP` is applied and subtotal is under $50. |
-| ASK-07 | Whether removing the last cart line clears a stored promo on the empty cart. |
+| `.cursor/hooks/guard-approvals.sh` | Mode bit only; agent hook, not customer-facing. |
+| `.cursor/hooks/guard-baselines.sh` | New agent shell guard; not customer-facing. |
+| `.cursor/hooks/guard-constitution.sh` | Mode bit only; agent hook. |
+| `.cursor/hooks/guard-test-assertions.sh` | Mode bit only; agent hook. |
+| `docs/features/back-in-stock.md` | Feature oracle doc; informs rows above, not a runtime surface. |
+| `docs/features/promo-codes.md` | Feature oracle doc; informs rows above, not a runtime surface. |
+| `docs/test-plans/feature-back-in-stock.md` | Prior/plan artifact in the diff; not customer-facing. |
+| `docs/test-plans/feature/promo-codes.md` | Existing plan text; not customer-facing. |
+| `docs/test-plans/feature/promo-codes-results.md` | Results notes; not customer-facing. |
+| `scripts/agent-guard.sh` | Script wiring; not customer-facing. |
+| `scripts/test-gates.sh` | CI/script gate; not customer-facing. |
+| `tests/a11y/a11y-baseline.json` | Baseline data for a11y project; not a new product behavior. |
+| `tests/a11y/promo.spec.ts` | Existing/proposed a11y spec file; triage does not author specs. |
+| `tests/api/promo-codes.spec.ts` | Existing/proposed API spec file; triage does not author specs. |
+| `tests/e2e/promo-codes.spec.ts` | Existing/proposed E2E spec file; triage does not author specs. |
+| `tests/pages/*.ts` | Playwright page objects; support harness only. |
+| `web/cypress/component/PromoCodeInput.cy.tsx` | Existing/proposed Cypress spec; triage does not author specs. |
+| `web/cypress/fixtures/**` | Fixtures for Cypress; not product behavior themselves. |
+| `web/cypress/test-design/**` | Design tables for another skill; not this plan’s output. |
+| `web/cypress/ui/cart-promo.cy.ts` | Existing/proposed UI spec; triage does not author specs. |
+| `web/cypress/ui/checkout-promo.cy.ts` | Existing/proposed UI spec; triage does not author specs. |
+| `web/cypress/ui/orders-promo.cy.ts` | Existing/proposed UI spec; triage does not author specs. |
+| `web/src/components/*.module.css` | Styles covered indirectly by component/UI/a11y rows. |
+| `web/src/types.ts` | Type fields for `discount`/`promoCode`; behavior covered via UI/API rows. |
+| `web/vite.config.ts` | Dev/Cypress port split; not customer-facing shop behavior. |
