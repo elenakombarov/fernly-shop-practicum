@@ -71,6 +71,8 @@ jobs:
           git fetch --no-tags \
             "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
             "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git merge --no-edit "origin/${BASE_REF}"
           git config --local --unset-all http.https://github.com/.extraheader || true
 
@@ -214,6 +216,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git merge --no-edit "origin/${BASE_REF}"
 
       - name: Guard, apply, commit, and push the plan
@@ -274,6 +278,8 @@ jobs:
           git fetch --no-tags \
             "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
             "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git merge --no-edit "origin/${BASE_REF}"
           git config --local --unset-all http.https://github.com/.extraheader || true
 
@@ -444,6 +450,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch --no-tags origin "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git merge --no-edit "origin/${BASE_REF}"
 
       - name: Guard, apply, commit, and push the tests
