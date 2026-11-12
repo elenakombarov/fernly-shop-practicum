@@ -83,4 +83,63 @@ describe('OrderSummary', () => {
     });
     cy.findAllByText(/more for free shipping/).should('have.length', 0);
   });
+
+  it(
+    'CT-04 shows Discount (CODE) and −$X.XX between subtotal and shipping when discount > 0',
+    { tags: '@component' },
+    () => {
+      cy.mount(
+        <OrderSummary
+          itemCount={1}
+          subtotal={40}
+          discount={4}
+          promoCode="LEAFY10"
+          shipping={6.95}
+          total={42.95}
+        />,
+      );
+
+      cy.findByText('Discount (LEAFY10)');
+      cy.findByText('\u2212$4.00');
+      cy.findByText(hasOwnText('Subtotal (1 item)')).then(($subtotal) => {
+        const subtotalRow = $subtotal[0].closest('div');
+        const discountRow = Cypress.$('body')
+          .find('*')
+          .filter((_, el) => (el.textContent ?? '').includes('Discount (LEAFY10)'))
+          .first()
+          .closest('div')[0];
+        const shippingTerm = Cypress.$('body')
+          .find('*')
+          .filter((_, el) => directText(el) === 'Shipping')
+          .first()[0];
+        expect(subtotalRow, 'subtotal row').to.exist;
+        expect(discountRow, 'discount row').to.exist;
+        expect(shippingTerm, 'shipping term').to.exist;
+        const order = [subtotalRow!, discountRow!, shippingTerm.closest('div')!].map((el) =>
+          el.compareDocumentPosition
+            ? Array.from(el.parentElement?.children ?? []).indexOf(el)
+            : -1,
+        );
+        expect(order[0], 'subtotal before discount').to.be.lessThan(order[1]);
+        expect(order[1], 'discount before shipping').to.be.lessThan(order[2]);
+      });
+      cy.findByText(hasOwnText('Shipping')).then(($term) => {
+        expect(valueBeside($term[0]), 'shipping').to.equal('$6.95');
+      });
+      cy.findByText(hasOwnText('Total')).then(($term) => {
+        expect(valueBeside($term[0]), 'total').to.equal('$42.95');
+      });
+      cy.findByText('Add $10.00 more for free shipping.');
+
+      cy.mount(
+        <OrderSummary itemCount={1} subtotal={12.5} discount={0} promoCode={null} shipping={6.95} total={19.45} />,
+      );
+      cy.findAllByText(/^Discount/).should('have.length', 0);
+
+      cy.mount(<OrderSummary itemCount={1} subtotal={50} discount={0} shipping={0} total={50} />);
+      cy.findByText(hasOwnText('Shipping')).then(($term) => {
+        expect(valueBeside($term[0]), 'shipping').to.equal('Free');
+      });
+    },
+  );
 });

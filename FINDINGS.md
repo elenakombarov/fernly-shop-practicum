@@ -124,6 +124,33 @@ Confirmed entries use stable ids (`F-01`, `F-02`, …) so QA reporting and GitHu
 
 These tests failed, and the recorded evidence does not confirm that the product is wrong. They stay out of Findings until that is settled.
 
+### StockBadge shows "Only 0 left" and overlays the plant photo
+
+- **Where:** `StockBadge` (`web/src/components/StockBadge.tsx` / plant-card stock-badge slot), Browse plant cards
+- **Category:** Browse / Components
+- **Impact:** An out-of-stock card can show both "Out of stock" and "Only 0 left", and the low-stock badge sits on the photo instead of with the tags under the name, so stock status is easy to misread.
+- **Evidence:** **Executed:** `web/cypress/component/StockBadge.cy.tsx`, CT-01, failed: with `stock={0}` the component rendered "Only 0 left" (expected none). Screenshot: `web/cypress/screenshots/StockBadge.cy.tsx/StockBadge -- CT-01 shows Only N left for stock 1–3, nothing above 3, and never Only 0 left (failed).png`. **Executed:** `web/cypress/ui/browse-stock-badge.cy.ts`, UI-01, failed: "Only 1 left" was above the plant name (badge top 307 vs name bottom 555), over the photo. Screenshot: `web/cypress/screenshots/browse-stock-badge.cy.ts/Browse stock badge -- UI-01 shows Only N left for stock 1–3 under the name, Out of stock alone at 0, and no low-stock badge above 3 (failed).png`. **Executed:** `tests/a11y/pages.spec.ts`, A11Y-03, failed: Chinese Money Plant card showed "Out of stock" and also "Only 0 left".
+- **Contradicts:** `docs/features/back-in-stock.md` — "Only N left" when 1, 2 or 3; at 0 only "Out of stock", never "Only 0 left"; badge with other tags under the name, never covering the photo or save control.
+- **Suggested fix:** Render nothing for `stock` 0 and for `stock` > 3; keep the badge in normal document flow with the other tags under the name (no absolute overlay on the photo).
+
+### Duplicate back-in-stock sign-up is not refused
+
+- **Where:** Plant page notify form → `POST /api/plants/{plantId}/notify`
+- **Category:** Plant / API
+- **Impact:** The same email can sign up again (including different letter case) without seeing "You're already on the list", so the one-sign-up-per-email rule is not enforced for the customer.
+- **Evidence:** **Executed:** `tests/e2e/back-in-stock.spec.ts`, E2E-01, failed. First sign-up on Chinese Money Plant (`pl-pilea`) confirmed the address. Reloading and submitting the same email in upper case did not show "You're already on the list" (timeout 5s, element not found).
+- **Contradicts:** `docs/features/back-in-stock.md` — one sign-up per email per plant, ignoring case; signing up again is refused with "You're already on the list".
+- **Suggested fix:** Refuse a second sign-up for the same plant and email (case-insensitive) with that customer-facing message.
+
+### Discount line drops trailing zeros (`−$4` instead of `−$4.00`)
+
+- **Where:** `OrderSummary` discount row (uses `formatPrice`)
+- **Category:** Money
+- **Impact:** A promo discount is shown without two decimal places, same class of money-display bug as F-01.
+- **Evidence:** **Executed:** `web/cypress/component/OrderSummary.cy.tsx`, CT-04, failed. With `discount={4}` and `promoCode="LEAFY10"`, the summary showed `Discount (LEAFY10)` and `−$4` (and the free-shipping hint used `$10`), not `−$4.00` / `$10.00`. Screenshot: `web/cypress/screenshots/OrderSummary.cy.tsx/OrderSummary -- CT-04 shows Discount (CODE) and −$X.XX between subtotal and shipping when discount  0 (failed).png`.
+- **Contradicts:** `docs/features/promo-codes.md` discount line format (`−$4.00`); `docs/PRODUCT.md` every price is dollars with two decimals.
+- **Suggested fix:** Format the discount amount with two decimal places (same fix as F-01).
+
 ### Enter on the focused save button does not report the plant id
 
 - **Where:** `PlantCard` save button (`web/src/components/PlantCard.tsx`)
