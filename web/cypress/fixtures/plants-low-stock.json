@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "pl-snake",
+      "name": "Snake Plant",
+      "latinName": "Dracaena trifasciata",
+      "price": 22,
+      "light": "low",
+      "careLevel": 1,
+      "petSafe": false,
+      "stock": 2,
+      "rating": 4.8,
+      "imageUrl": "/plants/snake.svg"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "pageSize": 12
+}

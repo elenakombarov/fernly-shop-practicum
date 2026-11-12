@@ -64,4 +64,61 @@ describe('Browse page', () => {
       cy.findByRole('button', { name: 'Try again' });
     });
   });
+
+  it(
+    'UI-01 shows Only N left with the tags under the name, not over the photo or save control',
+    { tags: '@ui' },
+    () => {
+      cy.intercept('GET', '/api/plants?*', { fixture: 'plants-low-stock.json' }).as('plants');
+      cy.visit('/');
+      cy.wait('@plants');
+
+      cy.findByRole('article').within(() => {
+        cy.findByRole('heading', { name: 'Snake Plant' }).then(($name) => {
+          cy.findByText('Only 2 left').then(($badge) => {
+            cy.findByRole('img', { name: 'Snake Plant' }).then(($photo) => {
+              cy.findByRole('button').then(($save) => {
+                const nameBox = $name[0].getBoundingClientRect();
+                const badgeBox = $badge[0].getBoundingClientRect();
+                const photoBox = $photo[0].getBoundingClientRect();
+                const saveBox = $save[0].getBoundingClientRect();
+
+                expect(badgeBox.top, 'badge below name').to.be.at.least(nameBox.bottom - 1);
+
+                const overlaps = (a: DOMRect, b: DOMRect) =>
+                  a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+                expect(overlaps(badgeBox, photoBox), 'badge over photo').to.equal(false);
+                expect(overlaps(badgeBox, saveBox), 'badge over save').to.equal(false);
+              });
+            });
+          });
+        });
+      });
+    },
+  );
+
+  it(
+    'UI-02 shows Out of stock without Only 0 left, and no low-stock badge above stock 3',
+    { tags: '@ui' },
+    () => {
+      cy.intercept('GET', '/api/plants?*', { fixture: 'plants-stock-edge.json' }).as('plants');
+      cy.visit('/');
+      cy.wait('@plants');
+
+      cy.findByRole('heading', { name: 'Chinese Money Plant' })
+        .closest('article')
+        .then(($card) => {
+          expect($card.length, 'out-of-stock card').to.equal(1);
+          expect($card.text(), 'out of stock label').to.include('Out of stock');
+          expect($card.text(), 'only 0 left').not.to.include('Only 0 left');
+        });
+
+      cy.findByRole('heading', { name: 'ZZ Plant' })
+        .closest('article')
+        .within(() => {
+          cy.findAllByText(/^Only \d+ left$/).should('have.length', 0);
+        });
+    },
+  );
 });
