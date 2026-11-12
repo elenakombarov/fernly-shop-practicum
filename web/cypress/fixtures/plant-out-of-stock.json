@@ -1,0 +1,18 @@
+{
+  "id": "pl-pilea",
+  "name": "Chinese Money Plant",
+  "latinName": "Pilea peperomioides",
+  "price": 15,
+  "light": "medium",
+  "careLevel": 1,
+  "petSafe": true,
+  "stock": 0,
+  "rating": 4.7,
+  "imageUrl": "/plants/succulent.svg",
+  "description": "A round-leaved plant that likes a bright spot.",
+  "sizes": [
+    { "label": "S", "priceDelta": 0 },
+    { "label": "M", "priceDelta": 4 }
+  ],
+  "similar": []
+}

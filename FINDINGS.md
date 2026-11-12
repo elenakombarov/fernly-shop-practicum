@@ -124,6 +124,59 @@ Confirmed entries use stable ids (`F-01`, `F-02`, …) so QA reporting and GitHu
 
 These tests failed, and the recorded evidence does not confirm that the product is wrong. They stay out of Findings until that is settled.
 
+### Stock 0 still shows "Only 0 left"
+
+- **Where:** `StockBadge` (`web/src/components/StockBadge.tsx`) and plant-card slot; Browse cards
+- **Category:** Components / Browse
+- **Impact:** An out-of-stock plant shows **"Only 0 left"** next to **"Out of stock"**, which the feature forbids.
+- **Evidence:** **Executed:**
+  - `web/cypress/component/StockBadge.cy.tsx`, CT-02: with stock 0 and 1 mounted, body text included `Only 0 left`. Screenshot: `web/cypress/screenshots/StockBadge.cy.tsx/StockBadge -- CT-02 does not show Only 0 left when stock is 0 (failed).png`.
+  - `web/cypress/component/StockBadgeSlot.cy.tsx`, CT-04: stock 0 rendered `Only 0 left` beside `Only 2 left`. Screenshot: `web/cypress/screenshots/StockBadgeSlot.cy.tsx/StockBadgeSlot -- CT-04 shows Only N left for stock 1–3 and no low-stock badge for stock 0 or stock  3 (failed).png`.
+  - `web/cypress/ui/browse.cy.ts`, UI-02: Chinese Money Plant card text included both `Out of stock` and `Only 0 left`.
+  - `tests/e2e/back-in-stock.spec.ts`, E2E-01: after searching to the stock-0 card, `Only 0 left` had count 1.
+- **Contradicts:** `docs/features/back-in-stock.md` (At 0 the card shows only "Out of stock" — never "Only 0 left")
+- **Suggested fix:** Render no low-stock badge when `stock < 1` (only for 1–3).
+
+### Low-stock badge covers the photo and save control
+
+- **Where:** `StockBadge` styles (`web/src/components/StockBadge.module.css`) on Browse plant cards
+- **Category:** Browse / Accessibility
+- **Impact:** **"Only N left"** sits over the photo and overlaps the save heart instead of sitting with the tags under the name.
+- **Evidence:** **Executed:**
+  - `web/cypress/ui/browse.cy.ts`, UI-01: badge top was above the name bottom (`badge below name` expected ≥ name bottom, actual badge top lower on the card). Screenshot path from the run: `web/cypress/screenshots/browse.cy.ts/Browse page -- UI-01 shows Only N left with the tags under the name, not over the photo or save control (failed).png`.
+  - `tests/a11y/pages.spec.ts`, A11Y-02: badge bounding box overlapped the save button; contrast check reached that geometry assertion.
+- **Contradicts:** `docs/features/back-in-stock.md` (badge sits with the other tags under the name; never covers the photo or the save button); `docs/PRODUCT.md` accessibility (keyboard target / names)
+- **Suggested fix:** Position the badge in normal flow with the tag row, not `position: absolute` over the card media.
+
+### Incomplete emails are accepted for notify sign-up
+
+- **Where:** `POST /api/plants/{plantId}/notify`
+- **Category:** API
+- **Impact:** Addresses like `a@b` and `name@` return **201** instead of **400** `validation_error`, so a shopper can join the list with an address that cannot receive mail.
+- **Evidence:** **Executed:** `tests/api/back-in-stock.spec.ts`, API-02: `a@b` returned HTTP 201 (expected 400). Live probe in the same session: `a@b` and `name@` → 201; `not-an-email` → 400 `validation_error`.
+- **Contradicts:** `docs/features/back-in-stock.md` (email must be a full address like `name@example.com`; `a@b` or `name@` are refused); OpenAPI notify description
+- **Suggested fix:** Reject incomplete emails with **400** and `rule` `validation_error`.
+
+### Duplicate notify sign-up ignores email case
+
+- **Where:** `POST /api/plants/{plantId}/notify`
+- **Category:** API / Plant page
+- **Impact:** Signing up again with the same address in a different case returns **201** and a success confirmation instead of **409** "You're already on the list".
+- **Evidence:** **Executed:**
+  - `tests/api/back-in-stock.spec.ts`, API-05: after `duplicate-case@example.com`, `Duplicate-Case@Example.com` returned 201 (expected 409).
+  - `tests/e2e/back-in-stock.spec.ts`, E2E-02: after `name@example.com`, reload + `Name@Example.com` showed `We'll email Name@Example.com when Chinese Money Plant is back.` and not "You're already on the list".
+- **Contradicts:** `docs/features/back-in-stock.md` (one sign-up per email per plant, ignoring case); OpenAPI `409` `already_subscribed`
+- **Suggested fix:** Compare emails case-insensitively and return **409** with that detail when already subscribed.
+
+### Out-of-stock plant page axe scan still blocked by known price and image issues
+
+- **Where:** Plant page notify state (axe on out-of-stock plant)
+- **Category:** Accessibility
+- **Impact:** A11Y-01 reached named notify controls and keyboard submit successfully, then axe reported blocking `color-contrast` on `.PriceTag-module__price` and `image-alt` on `img` for page name `Plant notify`.
+- **Evidence:** **Executed:** `tests/a11y/pages.spec.ts`, A11Y-01. Notify label/button names, focus ring, and Enter submit confirmation passed. `expectNoBlocking(..., 'Plant notify')` failed with those two new blocking nodes. Overlaps confirmed findings F-08 and F-12 on the plant page.
+- **Contradicts:** `docs/PRODUCT.md` Accessibility; row A11Y-01 requires axe WCAG 2.1 AA on that page state
+- **Suggested fix:** Same as F-08 and F-12; re-run A11Y-01 after those are fixed.
+
 ### Enter on the focused save button does not report the plant id
 
 - **Where:** `PlantCard` save button (`web/src/components/PlantCard.tsx`)
