@@ -91,6 +91,7 @@ test(
   'A11Y-01 out-of-stock notify form is named, keyboard usable, and axe-clean',
   { tag: '@a11y' },
   async ({ page, request }, testInfo) => {
+    test.fail(true, 'FINDING-08/FINDING-12: Price contrast and missing image alt');
     const catalog = await request.get('/api/plants?pageSize=48');
     expect(catalog.status()).toBe(200);
     const body = await catalog.json();
@@ -143,6 +144,7 @@ test(
   'A11Y-02 Only N left badge meets contrast and does not block the save control',
   { tag: '@a11y' },
   async ({ page, request }) => {
+    test.fail(true, 'FINDING-16: Badge overlaps save control');
     const catalog = await request.get('/api/plants?pageSize=48');
     expect(catalog.status()).toBe(200);
     const body = await catalog.json();

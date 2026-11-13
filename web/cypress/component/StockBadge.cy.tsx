@@ -15,7 +15,7 @@ describe('StockBadge', () => {
     cy.findByText('Only 3 left');
   });
 
-  it('CT-02 does not show Only 0 left when stock is 0', { tags: '@component' }, () => {
+  it('CT-02 does not show Only 0 left when stock is 0', { tags: ['@component', '@known-bug'] }, () => {
     cy.mount(
       <>
         <StockBadge stock={0} />

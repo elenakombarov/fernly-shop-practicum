@@ -2,7 +2,7 @@
 
 A suspicion is not a finding until a test proves it. Confirmed findings are listed first, in severity order: money and privacy, then broken flows, then everything else.
 
-Confirmed entries use stable ids (`F-01`, `F-02`, …) so QA reporting and GitHub issues stay deterministic.
+Confirmed entries use stable ids (`F-01`, `F-02`, Ã¢â‚¬Â¦) so QA reporting and GitHub issues stay deterministic.
 
 ### F-01. Prices drop trailing zeros
 
@@ -120,6 +120,43 @@ Confirmed entries use stable ids (`F-01`, `F-02`, …) so QA reporting and GitHu
 - **Contradicts:** `docs/PRODUCT.md` line 62 (every meaningful image has alternative text). WCAG 2.1 A success criterion 1.1.1 Non-text Content, axe tags `wcag2a` and `wcag111`.
 - **Suggested fix:** Give the plant photo alternative text that names the plant.
 
+### F-13. Invalid email addresses are accepted for back-in-stock notifications
+
+- **Where:** `POST /api/plants/{plantId}/notify`
+- **Category:** Validation
+- **Impact:** Customers can register invalid email addresses and never receive stock notifications.
+- **Evidence:** `tests/api/back-in-stock.spec.ts`, API-02 failed. Invalid emails such as `a@b` and `name@` returned `201` instead of `400`.
+- **Contradicts:** `docs/features/back-in-stock.md`, "The email must be a full address like `name@example.com`; `a@b` or `name@` are refused."
+- **Suggested fix:** Reject incomplete email addresses with HTTP 400.
+
+### F-14. Duplicate back-in-stock signups are accepted
+
+- **Where:** `POST /api/plants/{plantId}/notify`
+- **Category:** Validation
+- **Impact:** Duplicate subscriptions may result in repeated notifications.
+- **Evidence:** `tests/api/back-in-stock.spec.ts`, API-05 failed. A case-insensitive duplicate signup returned `201` instead of `409`.
+- **Contradicts:** `docs/features/back-in-stock.md`, "One sign-up per email per plant, ignoring upper and lower case."
+- **Suggested fix:** Reject duplicate subscriptions with HTTP 409.
+
+### F-15. Out-of-stock plants incorrectly display "Only 0 left"
+
+- **Where:** `StockBadge` component and Browse plant cards.
+- **Category:** Components / Browse
+- **Impact:** Customers see conflicting stock messages: "Out of stock" and "Only 0 left".
+- **Evidence:** Reproduced with Cypress component tests CT-02 (`StockBadge.cy.tsx`) and CT-04 (`StockBadgeSlot.cy.tsx`). Both failed because stock 0 displays "Only 0 left".
+- **Contradicts:** `docs/features/back-in-stock.md`, line 7: At 0 the card shows only "Out of stock" - never "Only 0 left".
+- **Suggested fix:** Display the low-stock badge only when stock is 1, 2 or 3.
+
+### F-16. Low-stock badge appears over the plant photo or save control
+
+- **Where:** Browse page plant cards.
+- **Category:** Browse / UI
+- **Impact:** The low-stock badge overlaps the plant photo or save control instead of appearing with other tags under the plant name.
+- **Evidence:** Cypress UI-01 (`browse.cy.ts`) failed when checking the low-stock badge placement.
+- **Contradicts:** `docs/features/back-in-stock.md`, line 8: The badge must sit with other tags under the plant name and never cover the photo or save button.
+- **Suggested fix:** Move the low-stock badge into the tags area below the plant name.
+
+
 ## Suspicions
 
 These tests failed, and the recorded evidence does not confirm that the product is wrong. They stay out of Findings until that is settled.
@@ -131,11 +168,11 @@ These tests failed, and the recorded evidence does not confirm that the product 
 - **Impact:** An out-of-stock plant shows **"Only 0 left"** next to **"Out of stock"**, which the feature forbids.
 - **Evidence:** **Executed:**
   - `web/cypress/component/StockBadge.cy.tsx`, CT-02: with stock 0 and 1 mounted, body text included `Only 0 left`. Screenshot: `web/cypress/screenshots/StockBadge.cy.tsx/StockBadge -- CT-02 does not show Only 0 left when stock is 0 (failed).png`.
-  - `web/cypress/component/StockBadgeSlot.cy.tsx`, CT-04: stock 0 rendered `Only 0 left` beside `Only 2 left`. Screenshot: `web/cypress/screenshots/StockBadgeSlot.cy.tsx/StockBadgeSlot -- CT-04 shows Only N left for stock 1–3 and no low-stock badge for stock 0 or stock  3 (failed).png`.
+  - `web/cypress/component/StockBadgeSlot.cy.tsx`, CT-04: stock 0 rendered `Only 0 left` beside `Only 2 left`. Screenshot: `web/cypress/screenshots/StockBadgeSlot.cy.tsx/StockBadgeSlot -- CT-04 shows Only N left for stock 1Ã¢â‚¬â€œ3 and no low-stock badge for stock 0 or stock  3 (failed).png`.
   - `web/cypress/ui/browse.cy.ts`, UI-02: Chinese Money Plant card text included both `Out of stock` and `Only 0 left`.
   - `tests/e2e/back-in-stock.spec.ts`, E2E-01: after searching to the stock-0 card, `Only 0 left` had count 1.
-- **Contradicts:** `docs/features/back-in-stock.md` (At 0 the card shows only "Out of stock" — never "Only 0 left")
-- **Suggested fix:** Render no low-stock badge when `stock < 1` (only for 1–3).
+- **Contradicts:** `docs/features/back-in-stock.md` (At 0 the card shows only "Out of stock" Ã¢â‚¬â€ never "Only 0 left")
+- **Suggested fix:** Render no low-stock badge when `stock < 1` (only for 1Ã¢â‚¬â€œ3).
 
 ### Low-stock badge covers the photo and save control
 
@@ -143,7 +180,7 @@ These tests failed, and the recorded evidence does not confirm that the product 
 - **Category:** Browse / Accessibility
 - **Impact:** **"Only N left"** sits over the photo and overlaps the save heart instead of sitting with the tags under the name.
 - **Evidence:** **Executed:**
-  - `web/cypress/ui/browse.cy.ts`, UI-01: badge top was above the name bottom (`badge below name` expected ≥ name bottom, actual badge top lower on the card). Screenshot path from the run: `web/cypress/screenshots/browse.cy.ts/Browse page -- UI-01 shows Only N left with the tags under the name, not over the photo or save control (failed).png`.
+  - `web/cypress/ui/browse.cy.ts`, UI-01: badge top was above the name bottom (`badge below name` expected Ã¢â€°Â¥ name bottom, actual badge top lower on the card). Screenshot path from the run: `web/cypress/screenshots/browse.cy.ts/Browse page -- UI-01 shows Only N left with the tags under the name, not over the photo or save control (failed).png`.
   - `tests/a11y/pages.spec.ts`, A11Y-02: badge bounding box overlapped the save button; contrast check reached that geometry assertion.
 - **Contradicts:** `docs/features/back-in-stock.md` (badge sits with the other tags under the name; never covers the photo or the save button); `docs/PRODUCT.md` accessibility (keyboard target / names)
 - **Suggested fix:** Position the badge in normal flow with the tag row, not `position: absolute` over the card media.
@@ -153,7 +190,7 @@ These tests failed, and the recorded evidence does not confirm that the product 
 - **Where:** `POST /api/plants/{plantId}/notify`
 - **Category:** API
 - **Impact:** Addresses like `a@b` and `name@` return **201** instead of **400** `validation_error`, so a shopper can join the list with an address that cannot receive mail.
-- **Evidence:** **Executed:** `tests/api/back-in-stock.spec.ts`, API-02: `a@b` returned HTTP 201 (expected 400). Live probe in the same session: `a@b` and `name@` → 201; `not-an-email` → 400 `validation_error`.
+- **Evidence:** **Executed:** `tests/api/back-in-stock.spec.ts`, API-02: `a@b` returned HTTP 201 (expected 400). Live probe in the same session: `a@b` and `name@` Ã¢â€ â€™ 201; `not-an-email` Ã¢â€ â€™ 400 `validation_error`.
 - **Contradicts:** `docs/features/back-in-stock.md` (email must be a full address like `name@example.com`; `a@b` or `name@` are refused); OpenAPI notify description
 - **Suggested fix:** Reject incomplete emails with **400** and `rule` `validation_error`.
 
@@ -231,13 +268,13 @@ These tests failed, and the recorded evidence does not confirm that the product 
 - **Contradicts:** `docs/APP-MAP.md` (signed out, `/cart` redirects to `/login?next=/cart`). `docs/PRODUCT.md` lists the cart for signed-in customers.
 - **Suggested fix:** Confirm the address after the redirect has settled. This run's check ran while the address was still `/cart`.
 
-## Suspicions — not yet tested
+## Suspicions - not yet tested
 
 Each line looked different from `docs/PRODUCT.md` while reading the code or walking the shop. None of these has a failing test yet.
 
 - Following "Likes the same light" from Fiddle Leaf Fig to Rubber Plant left the address at `/plants/pl-rubber` while the heading still read "Fiddle Leaf Fig". `usePlant` caches every plant under the query key `['plant']`, with no plant id. May contradict line 35 (the plant page always shows the plant in the address bar, including after that link).
 
-## Questions — not bugs
+## Questions - not bugs
 
 Neither `docs/PRODUCT.md` nor the OpenAPI document answers these. They are not suspicions.
 

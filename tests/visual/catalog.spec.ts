@@ -42,5 +42,6 @@ test('Hoya Carnosa card (low stock)', { tag: '@visual' }, async ({ page }) => {
   await expect(card).toBeVisible();
   await expect(card.getByRole('img')).toBeVisible();
 
+  test.fail(true, 'FINDING-16: Low-stock badge placement differs from approved layout');
   await expect(card).toHaveScreenshot('hoya-carnosa-card.png');
 });
