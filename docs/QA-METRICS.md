@@ -1,8 +1,8 @@
 # QA pipeline metrics
 
-Repo: `elenakombarov/fernly-shop-practicum`. Generated 2026-11-13T17:46:12Z by `node scripts/qa-metrics.mjs` (read-only collection; uses `gh` only; never opens issues).
+Repo: `elenakombarov/fernly-shop-practicum`. Generated 2026-11-13T19:38:54Z by `node scripts/qa-metrics.mjs` (read-only collection; uses `gh` only; never opens issues).
 
-**Totals:** routing accuracy = 32/44 (72.7%); false-alarm rate = —.
+**Totals:** routing accuracy = 32/44 (72.7%); false-alarm rate = 0/4 (0.0%).
 
 **Spend:** agent cost is not available in GitHub; see the [Cursor dashboard](https://cursor.com/dashboard) for usage and billing.
 
@@ -10,7 +10,7 @@ Repo: `elenakombarov/fernly-shop-practicum`. Generated 2026-11-13T17:46:12Z by `
 | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: |
 | [#1](https://github.com/elenakombarov/fernly-shop-practicum/pull/1) | feature/promo-codes | 4/10 | failure | 1024.6 | 22 | cypress-results, cypress-screenshots, playwright-reports, playwright-test-results, qa-metrics-doc, qa-report | 0 | 0 |
 | [#2](https://github.com/elenakombarov/fernly-shop-practicum/pull/2) | feature/plant-reviews | 5/8 | failure | 16.7 | 16.5 | cypress-results, cypress-screenshots, playwright-reports, playwright-test-results, qa-metrics-doc, qa-report | 0 | 0 |
-| [#5](https://github.com/elenakombarov/fernly-shop-practicum/pull/5) | feature/back-in-stock | 23/26 | action_required | 2798.2 | 3527.2 | — | 0 | 0 |
+| [#5](https://github.com/elenakombarov/fernly-shop-practicum/pull/5) | feature/back-in-stock | 23/26 | action_required | 2798.2 | 3527.2 | — | 4 | 0 |
 
 ## How each number is measured
 
