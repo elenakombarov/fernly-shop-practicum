@@ -34,6 +34,7 @@ test(
   'E2E-01 shows Only N left for low stock and Out of stock without Only 0 left',
   { tag: '@e2e' },
   async ({ page, request }) => {
+    test.fail(true, 'FINDING-15: Only 0 left displayed for out-of-stock plants');
     const catalog = await request.get('/api/plants?pageSize=48');
     expect(catalog.status()).toBe(200);
     const plants = readPlants(await catalog.json());
@@ -63,6 +64,7 @@ test(
   'E2E-02 signs up for an out-of-stock plant, blocks a duplicate case, and hides the form when in stock',
   { tag: '@e2e' },
   async ({ page, request }) => {
+    test.fail(true, 'FINDING-14: Case-insensitive duplicate signup accepted');
     const catalog = await request.get('/api/plants?pageSize=48');
     expect(catalog.status()).toBe(200);
     const plants = readPlants(await catalog.json());

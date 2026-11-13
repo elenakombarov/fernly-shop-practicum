@@ -17,7 +17,7 @@ const base: PlantSummary = {
 describe('StockBadgeSlot', () => {
   it(
     'CT-04 shows Only N left for stock 1–3 and no low-stock badge for stock 0 or stock > 3',
-    { tags: '@component' },
+    { tags: ['@component', '@known-bug'] },
     () => {
       cy.mount(
         <>

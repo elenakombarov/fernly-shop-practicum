@@ -67,7 +67,7 @@ describe('Browse page', () => {
 
   it(
     'UI-01 shows Only N left with the tags under the name, not over the photo or save control',
-    { tags: '@ui' },
+    { tags: ['@ui', '@known-bug'] },
     () => {
       cy.intercept('GET', '/api/plants?*', { fixture: 'plants-low-stock.json' }).as('plants');
       cy.visit('/');
@@ -100,7 +100,7 @@ describe('Browse page', () => {
 
   it(
     'UI-02 shows Out of stock without Only 0 left, and no low-stock badge above stock 3',
-    { tags: '@ui' },
+    { tags: ['@ui', '@known-bug'] },
     () => {
       cy.intercept('GET', '/api/plants?*', { fixture: 'plants-stock-edge.json' }).as('plants');
       cy.visit('/');

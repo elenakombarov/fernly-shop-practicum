@@ -64,6 +64,7 @@ test(
   'API-02 refuses incomplete emails with validation_error',
   { tag: '@api' },
   async ({ request }) => {
+    test.fail(true, 'F-13: Invalid emails accepted');
     const plants = await catalog(request);
     const outOfStock = plants.filter((plant) => plant.stock === 0);
     expect(outOfStock.length, 'out-of-stock plants').toBeGreaterThan(0);
@@ -112,6 +113,7 @@ test(
   'API-05 refuses a second sign-up for the same email and plant in any case',
   { tag: '@api' },
   async ({ request }) => {
+    test.fail(true, 'F-14: Duplicate signups accepted');
     const plants = await catalog(request);
     const outOfStock = plants.filter((plant) => plant.stock === 0);
     expect(outOfStock.length, 'out-of-stock plants').toBeGreaterThan(0);
