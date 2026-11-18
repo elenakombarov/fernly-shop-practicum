@@ -1,0 +1,18 @@
+{
+  "id": "pl-aloe",
+  "name": "Aloe Vera",
+  "latinName": "Aloe barbadensis",
+  "price": 9.99,
+  "light": "bright",
+  "careLevel": 1,
+  "petSafe": false,
+  "stock": 18,
+  "rating": 4.3,
+  "imageUrl": "/plants/succulent.svg",
+  "description": "A sun-loving succulent with soothing gel inside its leaves.",
+  "sizes": [
+    { "label": "S", "priceDelta": 0 },
+    { "label": "M", "priceDelta": 4 }
+  ],
+  "similar": []
+}

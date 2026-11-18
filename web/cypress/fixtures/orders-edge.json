@@ -1,0 +1,28 @@
+[
+  {
+    "id": "ord-zero",
+    "status": "placed",
+    "createdAt": "2026-11-01T15:00:00.000Z",
+    "lines": [
+      {
+        "id": "ln-air",
+        "plantId": "pl-free",
+        "name": "Air Plant",
+        "size": "S",
+        "unitPrice": 0,
+        "quantity": 1,
+        "lineTotal": 0,
+        "imageUrl": "/plants/succulent.svg"
+      }
+    ],
+    "subtotal": 0,
+    "shipping": 0,
+    "total": 0,
+    "shippingAddress": {
+      "fullName": "Ava Green",
+      "address": "1 Fern Street",
+      "city": "Portland",
+      "postalCode": "97201"
+    }
+  }
+]

@@ -1,0 +1,85 @@
+{
+  "config": {},
+  "suites": [
+    {
+      "title": "",
+      "file": "",
+      "specs": [],
+      "suites": [
+        {
+          "title": "api",
+          "file": "api/plants.spec.ts",
+          "specs": [
+            {
+              "title": "price-desc returns the most expensive plant first",
+              "file": "api/plants.spec.ts",
+              "line": 43,
+              "tests": [
+                {
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "status": "failed",
+                      "errors": [
+                        {
+                          "message": "expect(received).toBe(expected)\nExpected: 189\nReceived: 0.99"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "title": "a plant matches the Plant schema",
+              "file": "api/plants.spec.ts",
+              "line": 32,
+              "tests": [
+                {
+                  "projectName": "api",
+                  "results": [
+                    {
+                      "status": "failed",
+                      "errors": [{ "message": "/rating: must be number" }],
+                      "attachments": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "suites": []
+        },
+        {
+          "title": "e2e",
+          "file": "e2e/browse.spec.ts",
+          "specs": [
+            {
+              "title": "choosing Price: high to low shows the most expensive plant first",
+              "file": "e2e/browse.spec.ts",
+              "line": 26,
+              "tests": [
+                {
+                  "projectName": "e2e",
+                  "results": [
+                    {
+                      "status": "failed",
+                      "errors": [
+                        {
+                          "message": "Expected: Variegated Thai... Received: Succulent Cutting"
+                        }
+                      ],
+                      "attachments": []
+                    }
+                  ]
+                }
+              ]
+            }
+          ],
+          "suites": []
+        }
+      ]
+    }
+  ]
+}
