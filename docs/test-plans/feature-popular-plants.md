@@ -15,7 +15,7 @@ Every row is **not yet tested**.
 | CT-03 | `web/src/components/PopularList.tsx` | Four items: all four names and sold counts show, most-popular-first order preserved from props. | `docs/features/popular-plants.md` (shows four plants, most popular first) | `web/cypress/component/PopularList.cy.tsx` |
 | CT-04 | `web/src/components/PopularList.tsx` | Five items with no `currentId`: only the first four render (boundary: one past the limit of four). | `docs/features/popular-plants.md` (four plants) | `web/cypress/component/PopularList.cy.tsx` |
 | CT-05 | `web/src/components/PopularList.tsx` | `currentId` matching one item: that plant is left out; remaining items still capped at four. | `docs/features/popular-plants.md` (plant on screen left out of its own page's list) | `web/cypress/component/PopularList.cy.tsx` |
-| CT-06 | `web/src/slots/plant-page/popular.tsx` | Slot component that mounts `PopularList` on the plant page: props/data path covered with the plant-page UI rows below; presentational boundaries are CT-01–CT-05. | `docs/features/popular-plants.md`; slot → plant page per skill | `web/cypress/component/PopularList.cy.tsx` |
+| CT-06 | `web/src/slots/plant-page/popular.tsx` | Slot that mounts `PopularList` on the plant page: with mocked successful popular data, shows "Popular right now" and excludes `plant.id`; presentational boundaries stay CT-01–CT-05. | `docs/features/popular-plants.md`; slot → plant page per skill | `web/cypress/component/PopularList.cy.tsx` |
 
 ## Cypress UI tests
 
@@ -24,7 +24,7 @@ Every row is **not yet tested**.
 | UI-01 | `web/src/slots/plant-page/popular.tsx` | Plant page normal: intercept `GET /api/popular*` with a fixture of five in-stock popular plants; the page shows "Popular right now" with four links, excludes the plant in the address bar, and shows each "{n} sold this month". | `docs/features/popular-plants.md`; `docs/APP-MAP.md` (`/plants/:plantId`) | `web/cypress/ui/plant.cy.ts` |
 | UI-02 | `web/src/slots/plant-page/popular.tsx` | Empty answer: intercept `GET /api/popular*` → `{ items: [] }` (or only the current plant); the Popular section does not appear. | `docs/features/popular-plants.md`; APP-MAP plant empty/loading patterns | `web/cypress/ui/plant.cy.ts` |
 | UI-03 | `web/src/slots/plant-page/popular.tsx` | Error 500: intercept `GET /api/popular*` → 500; plant page still loads the plant; Popular section does not appear (no false empty catalog). Exact error copy for this strip: **assumed — ask** (PRODUCT.md / feature doc do not state Popular failure UI). | assumed — ask (failure UI); feature doc for not sending customers nowhere | `web/cypress/ui/plant.cy.ts` |
-| UI-04 | `web/src/slots/plant-page/popular.tsx` | Signed-out (401 on other calls does not apply to public popular): Popular still loads when signed out — intercept success while signed out. | `docs/APP-MAP.md` (plant visible signed out); feature doc (everyone on plant page) | `web/cypress/ui/plant.cy.ts` |
+| UI-04 | `web/src/slots/plant-page/popular.tsx` | Signed-out: Popular still loads when signed out — intercept success while signed out (catalog popular is public). | `docs/APP-MAP.md` (plant visible signed out); feature doc (everyone on plant page) | `web/cypress/ui/plant.cy.ts` |
 | UI-05 | `web/src/slots/plant-page/popular.tsx` | Extreme fixture: very large `unitsSold` still shows as "{n} sold this month" next to the link. | `docs/features/popular-plants.md` | `web/cypress/ui/plant.cy.ts` |
 
 ## Playwright E2E tests
@@ -61,4 +61,5 @@ Every row is **not yet tested**.
 | --- | --- |
 | `web/src/components/PopularList.module.css` | Presentation only; contrast and structure covered by A11Y-01 and CT/UI rows. |
 | `docs/features/popular-plants.md` | Feature oracle for the rows above (including K6-01); not a separate customer-facing surface to re-test as a doc file. |
+| `docs/test-plans/feature-popular-plants.md` | Prior triage artifact in the PR; this file is the plan output, not shop behavior. |
 | `pr-text.md`, `pr.diff`, `branch-name.txt` | Untrusted PR triage inputs; not shop behavior. |
