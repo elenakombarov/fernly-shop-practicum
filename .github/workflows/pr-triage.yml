@@ -363,6 +363,9 @@ jobs:
           Write your report to the chat; the workflow saves it as results.
           EOF
 
+      - name: Set up k6
+        uses: grafana/setup-k6-action@v1
+
       - name: Run the tests agent
         timeout-minutes: 40
         env:
