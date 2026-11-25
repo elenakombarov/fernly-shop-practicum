@@ -66,6 +66,66 @@ test('Plant has no blocking accessibility violations', { tag: '@a11y' }, async (
   await expectNoBlocking(page, testInfo, 'Plant');
 });
 
+test(
+  'A11Y-01 Popular right now is named, linked, keyboard-usable, and sold text meets contrast',
+  { tag: '@a11y' },
+  async ({ page }) => {
+    await page.goto('/plants/pl-aloe');
+    const popular = page.getByRole('region', { name: 'Popular right now' });
+    await expect(popular).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Popular right now' })).toBeVisible();
+
+    const links = popular.getByRole('link');
+    const linkCount = await links.count();
+    expect(linkCount).toBeGreaterThan(0);
+    expect(linkCount).toBeLessThanOrEqual(4);
+
+    for (let index = 0; index < linkCount; index += 1) {
+      const link = links.nth(index);
+      const name = (await link.innerText()).trim();
+      expect(name.length, `popular link ${index} name`).toBeGreaterThan(0);
+      await link.focus();
+      const outline = await link.evaluate((el) => getComputedStyle(el).outlineStyle);
+      expect(outline, `focus visible on ${name}`).not.toBe('none');
+    }
+
+    const sold = popular.getByText(/\d+ sold this month/).first();
+    await expect(sold).toBeVisible();
+    const contrast = await sold.evaluate((el) => {
+      const channel = (color: string): [number, number, number] => {
+        const rgb = color.match(/rgba?\((\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?),\s*(\d+(?:\.\d+)?)/);
+        if (!rgb) throw new Error(`unexpected color ${color}`);
+        return [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
+      };
+      const linear = (value: number) => {
+        const s = value / 255;
+        return s <= 0.04045 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+      };
+      const luminance = (color: string) => {
+        const [r, g, b] = channel(color).map(linear);
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      };
+      const style = getComputedStyle(el);
+      let background = style.backgroundColor;
+      let node: Element | null = el;
+      while (
+        node &&
+        (background === 'rgba(0, 0, 0, 0)' || background === 'transparent')
+      ) {
+        node = node.parentElement;
+        if (!node) break;
+        background = getComputedStyle(node).backgroundColor;
+      }
+      const fg = luminance(style.color);
+      const bg = luminance(background);
+      const lighter = Math.max(fg, bg);
+      const darker = Math.min(fg, bg);
+      return (lighter + 0.05) / (darker + 0.05);
+    });
+    expect(contrast, 'sold this month contrast').toBeGreaterThanOrEqual(4.5);
+  },
+);
+
 test('Sign in has no blocking accessibility violations', { tag: '@a11y' }, async ({ page }, testInfo) => {
   await page.goto('/login');
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();

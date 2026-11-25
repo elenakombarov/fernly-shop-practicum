@@ -1,0 +1,10 @@
+{
+  "days": 30,
+  "items": [
+    { "id": "pl-snake", "name": "Snake Plant", "unitsSold": 1000000 },
+    { "id": "pl-monstera", "name": "Monstera Deliciosa", "unitsSold": 999999 },
+    { "id": "pl-pothos", "name": "Pothos 'Golden'", "unitsSold": 888888 },
+    { "id": "pl-fiddle", "name": "Fiddle Leaf Fig", "unitsSold": 777777 },
+    { "id": "pl-rubber", "name": "Rubber Plant", "unitsSold": 666666 }
+  ]
+}
