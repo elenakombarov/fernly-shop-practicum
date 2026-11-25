@@ -31,7 +31,7 @@ Every row is **not yet tested**.
 
 | ID | changed path | what to prove | source | spec |
 | --- | --- | --- | --- | --- |
-| E2E-01 | `web/src/slots/plant-page/popular.tsx` | On a real plant page (`WEB_URL`), "Popular right now" lists up to four other plants from the real `GET /api/popular` answer; following a popular link opens that plant (`/plants/:plantId`) and the address bar matches. | `docs/features/popular-plants.md`; `docs/PRODUCT.md` (plant page shows the plant in the address bar, including after a related link) | `tests/e2e/popular-plants.spec.ts` |
+| E2E-01 | `web/src/slots/plant-page/popular.tsx` | On a real plant page (`WEB_URL`), "Popular right now" lists up to four other plants from the real `GET /api/popular` answer; following a popular link opens that plant (`/plants/:plantId`) and the address bar and plant heading match that plant. | `docs/features/popular-plants.md`; `docs/PRODUCT.md` (plant page shows the plant in the address bar, including after a related link) | `tests/e2e/popular-plants.spec.ts` |
 
 ## Playwright API tests
 
@@ -61,5 +61,7 @@ Every row is **not yet tested**.
 | --- | --- |
 | `web/src/components/PopularList.module.css` | Presentation only; contrast and structure covered by A11Y-01 and CT/UI rows. |
 | `docs/features/popular-plants.md` | Feature oracle for the rows above (including K6-01); not a separate customer-facing surface to re-test as a doc file. |
-| `docs/test-plans/feature-popular-plants.md` | Prior triage artifact in the PR; this file is the plan output, not shop behavior. |
+| `docs/test-plans/feature-popular-plants.md` | This plan output; not shop behavior. |
+| `FINDINGS.md` | QA reporting artifact; not shop behavior. |
+| `tests/**`, `web/cypress/**` (fixtures and specs in the PR) | Test code and fixtures; the plan rows above name what to prove, not to re-test the tests. |
 | `pr-text.md`, `pr.diff`, `branch-name.txt` | Untrusted PR triage inputs; not shop behavior. |
