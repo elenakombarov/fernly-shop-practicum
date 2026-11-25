@@ -120,6 +120,15 @@ Confirmed entries use stable ids (`F-01`, `F-02`, …) so QA reporting and GitHu
 - **Contradicts:** `docs/PRODUCT.md` line 62 (every meaningful image has alternative text). WCAG 2.1 A success criterion 1.1.1 Non-text Content, axe tags `wcag2a` and `wcag111`.
 - **Suggested fix:** Give the plant photo alternative text that names the plant.
 
+### F-13. Popular and the catalog are slower than 300 ms at 20 shoppers
+
+- **Where:** `GET /api/popular` and `GET /api/plants` under `tests/performance/popular-plants.js` (load)
+- **Category:** Performance
+- **Impact:** At the shop's busiest load, most popular and catalog answers take a few seconds. A shopper browsing plants waits well past the 300 ms the shop requires.
+- **Evidence:** **Executed:** `k6 run --env SCENARIO=load tests/performance/popular-plants.js`, 20 VUs for 30 seconds (170 iterations). `GET /api/popular` p95 = 3150.70 ms (limit 300 ms). `GET /api/plants` p95 = 2846.77 ms (limit 300 ms). Both `http_req_duration` thresholds failed. The same run reported popular p50 1582.69 ms and p99 3465.50 ms, and catalog p50 1235.88 ms and p99 3150.03 ms.
+- **Contradicts:** `docs/features/popular-plants.md` (How fast it must be: about 20 shoppers at once; 95% of `GET /api/popular` within 300 ms; at that load, 95% of `GET /api/plants` within 300 ms)
+- **Suggested fix:** Bring both endpoints under a 300 ms p95 at 20 concurrent shoppers. Do not raise the limits.
+
 ## Suspicions
 
 These tests failed, and the recorded evidence does not confirm that the product is wrong. They stay out of Findings until that is settled.
