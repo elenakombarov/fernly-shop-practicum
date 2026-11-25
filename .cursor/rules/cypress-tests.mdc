@@ -1,0 +1,152 @@
+---
+description: How we write Cypress component tests and UI tests with a mocked API in Fernly — Testing Library queries, no fixed waits, fixtures, one tag, honest failures.
+globs: web/cypress/**
+alwaysApply: false
+---
+
+# Cypress tests
+
+Component specs live in `web/cypress/component/**/*.cy.tsx`. UI specs with a mocked API live in `web/cypress/ui/**/*.cy.ts`. `@testing-library/cypress` is registered in `web/cypress/support/component.tsx` and `web/cypress/support/ui.ts`.
+
+## 1. Queries
+
+`findByRole`, then `findByLabelText`, then `findByText`. Never a CSS class or a tag name.
+
+**Good** — Increase quantity is the stepper button, "Pet-safe plants only" is the browse checkbox label, "Easy care" is what `CareLevelBadge` renders for level 1.
+
+```typescript
+cy.findByRole('button', { name: 'Increase quantity' }).click();
+cy.findByLabelText('Pet-safe plants only').click();
+cy.findByText('Easy care');
+```
+
+**Bad** — `QuantityStepper` styles the buttons with a CSS module, and `SearchBox` renders a `<button>Search</button>`.
+
+```typescript
+cy.get('.button').first().click();
+cy.get('button').contains('Search').click();
+```
+
+## 2. States
+
+Check disabled, checked, or a value inside `.then`, and say what the element is. A failing `.should()` chained to `findByRole` reports "Unable to find", which looks like a broken locator when the state is what's wrong.
+
+**Good** — the stock-limit stepper, the Medium radio in `SizePicker`, and the Sort by select (`price-desc` is "Price: high to low").
+
+```typescript
+cy.findByRole('button', { name: 'Increase quantity' })
+  .then(($el) => expect($el, 'increase at the stock limit').to.be.disabled);
+
+cy.findByRole('radio', { name: /^Medium/ })
+  .then(($el) => expect($el, 'Medium size').to.be.checked);
+
+cy.findByLabelText('Sort by')
+  .then(($el) => expect($el, 'sort').to.have.value('price-desc'));
+```
+
+**Bad** — the assertion in `web/cypress/component/QuantityStepper.cy.tsx` today:
+
+```typescript
+cy.findByRole('button', { name: 'Increase quantity' }).should('be.disabled');
+```
+
+## 3. Waiting
+
+Never `cy.wait(<milliseconds>)`. Wait for an intercepted request by its alias, or for what the user sees. `findBy*` retries.
+
+**Good** — the browse page loads `GET /api/plants` and its heading is "Plants for every windowsill".
+
+```typescript
+cy.intercept('GET', '/api/plants*', { fixture: 'plants-positive.json' }).as('plants');
+cy.visit('/');
+cy.wait('@plants');
+cy.findByRole('heading', { name: 'Plants for every windowsill' });
+```
+
+**Bad**
+
+```typescript
+cy.visit('/');
+cy.wait(500);
+cy.get('h1');
+```
+
+## 4. Data
+
+Component props belong in the test. API answers belong in `web/cypress/fixtures`, one file per scenario: positive, negative, edge.
+
+**Good** — the stepper is mounted with props. A catalog answer is a fixture, for example `plants-positive.json` (Snake Plant, `pl-snake`), `plants-negative.json` (the catalog cannot be loaded), `plants-edge.json` (Chinese Money Plant, `pl-pilea`, stock 0).
+
+```typescript
+cy.mount(<QuantityStepper value={3} max={3} onChange={cy.spy()} />);
+
+cy.intercept('GET', '/api/plants*', { fixture: 'plants-positive.json' }).as('plants');
+```
+
+**Bad** — the plant list is written inline in the spec.
+
+```typescript
+cy.intercept('GET', '/api/plants*', {
+  body: { items: [{ id: 'pl-snake', name: 'Snake Plant', price: 22 }], total: 1, page: 1, pageSize: 12 },
+});
+```
+
+## 5. Mocks
+
+`cy.intercept` only `/api/*` requests, and give each one an alias. Never stub the page.
+
+**Good** — the plant page reads `GET /api/plants/pl-fiddle`.
+
+```typescript
+cy.intercept('GET', '/api/plants/pl-fiddle', { fixture: 'plant-positive.json' }).as('plant');
+```
+
+**Bad** — `/plants/pl-fiddle` is the page, not the API.
+
+```typescript
+cy.intercept('GET', '/plants/pl-fiddle', { fixture: 'plant.html' });
+```
+
+## 6. Tags
+
+Exactly one level tag per test: `{ tags: '@component' }` or `{ tags: '@ui' }`. A confirmed bug adds `@known-bug`, and that tag stays out of the CI gate until the bug is fixed. Do not put a level tag on `describe`.
+
+**Good**
+
+```typescript
+it('calls onChange with the new value when + or − is clicked', { tags: '@component' }, () => {});
+
+it('offers Try again when the catalog cannot be loaded', { tags: '@ui' }, () => {});
+
+it('disables + at the stock limit', { tags: ['@component', '@known-bug'] }, () => {});
+```
+
+**Bad**
+
+```typescript
+describe('QuantityStepper', { tags: '@component' }, () => {
+  it('disables − at the minimum', () => {});
+});
+
+it('loads the shop', { tags: ['@component', '@ui'] }, () => {});
+```
+
+## 7. App code
+
+Never change `web/src`. A failing test that matches `docs/PRODUCT.md` is a finding in `FINDINGS.md`.
+
+**Good** — `docs/PRODUCT.md` line 34 says the + button is disabled at the stock limit. The component test "disables + at the stock limit" fails, and `FINDINGS.md` records that.
+
+**Bad** — editing `web/src/components/QuantityStepper.tsx` from `value > max` to `value >= max` so the test goes green.
+
+## 8. Evidence
+
+Label every claim **executed**, **inspected only**, or **not yet tested**.
+
+**Good**
+
+- **Executed:** `web/cypress/component/QuantityStepper.cy.tsx`, "disables + at the stock limit", was run and failed. The + button stayed enabled at `value={3}` `max={3}`.
+- **Inspected only:** `BrowsePage` renders "No plants match your filters" for `plants.isError`, and that branch was not triggered in the browser.
+- **Not yet tested:** prices without two decimals (`$22`, `$27.5`). No test yet.
+
+**Bad** — "The + button is broken" with no label, no test name, and no line in `docs/PRODUCT.md`.

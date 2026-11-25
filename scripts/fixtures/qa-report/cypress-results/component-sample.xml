@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Cypress component" tests="2" failures="1">
+  <testsuite name="PriceTag" tests="2" failures="1" file="cypress/component/PriceTag.cy.tsx">
+    <testcase name="PT-01 shows $12.50 for an amount with one decimal place" classname="PriceTag.cy.tsx" time="0.1">
+      <failure message="expected '$12.5' to equal '$12.50'"/>
+    </testcase>
+    <testcase name="PT-03 shows $9.99" classname="PriceTag.cy.tsx" time="0.1"/>
+  </testsuite>
+</testsuites>

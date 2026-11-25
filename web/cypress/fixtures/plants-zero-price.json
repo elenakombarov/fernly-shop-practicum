@@ -1,0 +1,19 @@
+{
+  "items": [
+    {
+      "id": "pl-free",
+      "name": "Air Plant",
+      "latinName": "Tillandsia ionantha",
+      "price": 0,
+      "light": "bright",
+      "careLevel": 1,
+      "petSafe": true,
+      "stock": 8,
+      "rating": 4.2,
+      "imageUrl": "/plants/succulent.svg"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "pageSize": 12
+}
