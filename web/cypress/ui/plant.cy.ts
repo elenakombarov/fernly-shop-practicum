@@ -64,4 +64,74 @@ describe('Plant page', () => {
     cy.findByRole('heading', { name: 'Air Plant' });
     cy.findByText('$0.00');
   });
+
+  it('UI-01 shows Popular right now with four links excluding the plant in the address bar', { tags: '@ui' }, () => {
+    cy.intercept('GET', '/api/plants?*', { fixture: 'plants-empty.json' }).as('catalog');
+    cy.intercept('GET', '/api/plants/pl-aloe', { fixture: 'plant-positive.json' }).as('plant');
+    cy.intercept('GET', '/api/popular*', { fixture: 'popular-positive.json' }).as('popular');
+    cy.visit('/plants/pl-aloe');
+    cy.wait('@plant');
+    cy.wait('@catalog');
+    cy.wait('@popular');
+
+    cy.findByRole('heading', { name: 'Popular right now' });
+    cy.findByRole('link', { name: 'Aloe Vera' }).should('not.exist');
+    cy.findByRole('list').within(() => {
+      cy.findAllByRole('link').then(($links) => {
+        expect($links, 'four popular links').to.have.length(4);
+        expect(
+          $links.toArray().map((link) => link.textContent),
+          'popular names',
+        ).to.deep.equal(['Snake Plant', 'Monstera Deliciosa', "Pothos 'Golden'", 'Fiddle Leaf Fig']);
+      });
+    });
+    cy.findByText('128 sold this month');
+    cy.findByText('96 sold this month');
+    cy.findByText('48 sold this month');
+    cy.findByText('32 sold this month');
+  });
+
+  it('UI-02 hides Popular when the popular answer is empty', { tags: '@ui' }, () => {
+    cy.intercept('GET', '/api/plants?*', { fixture: 'plants-empty.json' }).as('catalog');
+    cy.intercept('GET', '/api/plants/pl-aloe', { fixture: 'plant-positive.json' }).as('plant');
+    cy.intercept('GET', '/api/popular*', { fixture: 'popular-empty.json' }).as('popular');
+    cy.visit('/plants/pl-aloe');
+    cy.wait('@plant');
+    cy.wait('@catalog');
+    cy.wait('@popular');
+
+    cy.findByRole('heading', { name: 'Aloe Vera' });
+    cy.findByRole('heading', { name: 'Popular right now' }).should('not.exist');
+  });
+
+  it('UI-04 shows Popular when signed out', { tags: '@ui' }, () => {
+    cy.window().then((win) => {
+      win.localStorage.removeItem('fernly_token');
+    });
+    cy.intercept('GET', '/api/plants?*', { fixture: 'plants-empty.json' }).as('catalog');
+    cy.intercept('GET', '/api/plants/pl-aloe', { fixture: 'plant-positive.json' }).as('plant');
+    cy.intercept('GET', '/api/popular*', { fixture: 'popular-positive.json' }).as('popular');
+    cy.visit('/plants/pl-aloe');
+    cy.wait('@plant');
+    cy.wait('@catalog');
+    cy.wait('@popular');
+
+    cy.findByRole('heading', { name: 'Popular right now' });
+    cy.findByRole('link', { name: 'Snake Plant' });
+    cy.findByText('128 sold this month');
+  });
+
+  it('UI-05 shows a very large unitsSold as "{n} sold this month"', { tags: '@ui' }, () => {
+    cy.intercept('GET', '/api/plants?*', { fixture: 'plants-empty.json' }).as('catalog');
+    cy.intercept('GET', '/api/plants/pl-aloe', { fixture: 'plant-positive.json' }).as('plant');
+    cy.intercept('GET', '/api/popular*', { fixture: 'popular-edge.json' }).as('popular');
+    cy.visit('/plants/pl-aloe');
+    cy.wait('@plant');
+    cy.wait('@catalog');
+    cy.wait('@popular');
+
+    cy.findByRole('heading', { name: 'Popular right now' });
+    cy.findByRole('link', { name: 'Snake Plant' });
+    cy.findByText('1000000 sold this month');
+  });
 });

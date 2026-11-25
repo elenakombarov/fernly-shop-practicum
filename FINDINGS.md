@@ -120,9 +120,36 @@ Confirmed entries use stable ids (`F-01`, `F-02`, …) so QA reporting and GitHu
 - **Contradicts:** `docs/PRODUCT.md` line 62 (every meaningful image has alternative text). WCAG 2.1 A success criterion 1.1.1 Non-text Content, axe tags `wcag2a` and `wcag111`.
 - **Suggested fix:** Give the plant photo alternative text that names the plant.
 
+### F-13. Popular and the catalog are slower than 300 ms at 20 shoppers
+
+- **Where:** `GET /api/popular` and `GET /api/plants` under `tests/performance/popular-plants.js` (load)
+- **Category:** Performance
+- **Impact:** At the shop's busiest load, most popular and catalog answers take a few seconds. A shopper browsing plants waits well past the 300 ms the shop requires.
+- **Evidence:** **Executed:** `k6 run --env SCENARIO=load tests/performance/popular-plants.js`, 20 VUs for 30 seconds (170 iterations). `GET /api/popular` p95 = 3150.70 ms (limit 300 ms). `GET /api/plants` p95 = 2846.77 ms (limit 300 ms). Both `http_req_duration` thresholds failed. The same run reported popular p50 1582.69 ms and p99 3465.50 ms, and catalog p50 1235.88 ms and p99 3150.03 ms.
+- **Contradicts:** `docs/features/popular-plants.md` (How fast it must be: about 20 shoppers at once; 95% of `GET /api/popular` within 300 ms; at that load, 95% of `GET /api/plants` within 300 ms)
+- **Suggested fix:** Bring both endpoints under a 300 ms p95 at 20 concurrent shoppers. Do not raise the limits.
+
 ## Suspicions
 
 These tests failed, and the recorded evidence does not confirm that the product is wrong. They stay out of Findings until that is settled.
+
+### GET /api/popular includes an out-of-stock plant
+
+- **Where:** `GET /api/popular` (`api/src/features/popular.ts`)
+- **Category:** API
+- **Impact:** A customer on a plant page can be sent to Chinese Money Plant (and any other zero-stock popular plant) even though they cannot buy it.
+- **Evidence:** **Executed:** `tests/api/popular.spec.ts`, API-01 "GET /api/popular returns up to four in-stock plants ranked by units sold", fails. Default `GET /api/popular` returned Chinese Money Plant among the items. `GET /api/plants/pl-pilea` had `stock` `0`. Expected every popular item to have stock greater than 0.
+- **Contradicts:** `docs/features/popular-plants.md` (plants that are out of stock are left out)
+- **Suggested fix:** Exclude plants with stock 0 from `GET /api/popular`.
+
+### Following a Popular right now link updates the address but not the plant heading
+
+- **Where:** Plant page after a Popular right now link (`web/src/slots/plant-page/popular.tsx` → plant route)
+- **Category:** Pages
+- **Impact:** A customer clicks another popular plant, the address changes, and the page still shows the previous plant's name and details.
+- **Evidence:** **Executed:** `tests/e2e/popular-plants.spec.ts`, E2E-01 "Popular right now lists other plants and a link opens that plant page", fails. From `/plants/pl-aloe`, the Popular list matched the API answer. Clicking "Monstera Deliciosa" reached `/plants/pl-monstera` (URL assertion passed). The level-1 heading stayed "Aloe Vera". Screenshot/context: `test-results/popular-plants-E2E-01-Popu-a4906--link-opens-that-plant-page-e2e/error-context.md`.
+- **Contradicts:** `docs/PRODUCT.md` line 35 (the plant page always shows the plant in the address bar, including after a related link); `docs/features/popular-plants.md` (Popular links are meant to take the customer to that plant)
+- **Suggested fix:** Load the plant for the id in the address bar after in-app navigation (for example, include the plant id in the plant query key).
 
 ### Enter on the focused save button does not report the plant id
 
@@ -182,7 +209,7 @@ These tests failed, and the recorded evidence does not confirm that the product 
 
 Each line looked different from `docs/PRODUCT.md` while reading the code or walking the shop. None of these has a failing test yet.
 
-- Following "Likes the same light" from Fiddle Leaf Fig to Rubber Plant left the address at `/plants/pl-rubber` while the heading still read "Fiddle Leaf Fig". `usePlant` caches every plant under the query key `['plant']`, with no plant id. May contradict line 35 (the plant page always shows the plant in the address bar, including after that link).
+- Following "Likes the same light" from Fiddle Leaf Fig to Rubber Plant left the address at `/plants/pl-rubber` while the heading still read "Fiddle Leaf Fig". `usePlant` caches every plant under the query key `['plant']`, with no plant id. May contradict line 35. Popular-link navigation showed the same symptom in E2E-01 (now under Suspicions).
 
 ## Questions — not bugs
 
