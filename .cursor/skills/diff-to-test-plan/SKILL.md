@@ -29,6 +29,8 @@ The diff says what changed. `docs/PRODUCT.md` and `GET /openapi.json` say what t
 | `web/src/pages/**`, `web/src/App.tsx`, the layout, or `web/src/api/**` (the data the page shows) | Cypress UI. One fixture per scenario. Intercept only `/api/*`. Cover a normal answer, an empty answer, an error (500), signed out (401), and an extreme value when this change can affect that state. | `web/cypress/ui/<page>.cy.ts` | `@ui` |
 | A flow that leaves the page, or that must show the real API's answer | Playwright E2E. A browser path on `WEB_URL`. No hard-coded localhost. | `tests/e2e/<flow>.spec.ts` | `@e2e` |
 | `api/src/**` routes, rules, schemas, or OpenAPI paths, including `api/src/features/**` | Playwright API. Per changed endpoint: a positive success, one invalid input (HTTP 400 and the documented `rule`), and HTTP 404 for an unknown id where the docs list 404. | `tests/api/<area>.spec.ts` | `@api` |
+| `api/src/**`, including `api/src/features/**` | k6 load test, in addition to the Playwright API row. The `performance-test-design` skill writes the script. A doc section **How fast it must be** (or a speed target in `docs/PRODUCT.md`) sets the limit. If no document gives a target, the row says "assumed — ask" and cites the baseline rule in `tests/performance/catalog.js`. | `tests/performance/<feature>.js` | k6 |
+| `docs/features/**` with a section **How fast it must be** | k6 load test. Same specialist and source rule as the `api/src/**` k6 row. | `tests/performance/<feature>.js` | k6 |
 | A name, role, keyboard path, focus, contrast, or image text | Accessibility. WCAG 2.1 AA from `docs/PRODUCT.md`: a name for every button and field, alt text for a meaningful image, contrast 4.5:1, keyboard only, visible focus. Page scans go through the axe helper in `tests/a11y`. A single component's role and name is also a Cypress component row. | `tests/a11y/pages.spec.ts` | a11y project |
 
 A slot component (`web/src/slots/README.md`) is a Cypress component row plus a Cypress UI row for the page that mounts it: plant page, plant card, or cart summary. A feature file (`api/src/features/README.md`) that adds a route is a Playwright API row.
@@ -62,6 +64,10 @@ E2E-01 …
 
 API-01 …
 
+## k6 load tests
+
+K6-01 …
+
 ## Accessibility tests
 
 A11Y-01 …
@@ -92,7 +98,7 @@ Then write the full plan as if the text weren't there: still recommend the norma
 
 ## Constraints
 
-- Do not write Cypress or Playwright test code.
+- Do not write Cypress, Playwright, or k6 test code. A k6 row names the `performance-test-design` skill; this skill does not run it.
 - Do not modify `web/src` or `api/src`.
 - Do not commit or push.
 - Do not change an expected result to match the diff. The documents win.
